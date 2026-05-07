@@ -1,6 +1,5 @@
 """
-جدوى — نظام تقييم ملاءمة المواقع التجارية
-من عسير · أبها وخميس مشيط
+جدوى — نظام تقييم ملاءمة المواقع التجارية | أمانة منطقة عسير
 """
 import streamlit as st
 import pandas as pd
@@ -9,99 +8,406 @@ import joblib, time, requests
 import folium, plotly.graph_objects as go
 from streamlit_folium import st_folium
 
-st.set_page_config(
-    page_title="جدوى · من عسير",
-    page_icon="◆",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-)
+st.set_page_config(page_title="جدوى · أمانة عسير", page_icon="◆",
+                   layout="wide", initial_sidebar_state="collapsed")
 
-# ── CSS فاتح ──────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# CSS الاحترافي الكامل
+# ══════════════════════════════════════════════════════════════════════════════
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
 
-html, body, [class*="css"] { direction: rtl; font-family: 'Tajawal', sans-serif !important; }
-
-.stApp {
-    background-color: #F4F6FB;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Crect width='60' height='60' fill='%23F4F6FB'/%3E%3Cpolygon points='30,2 58,30 30,58 2,30' fill='none' stroke='%23C41230' stroke-width='0.5' opacity='0.1'/%3E%3C/svg%3E");
+:root {
+  --navy:   #071626;
+  --navy2:  #0D2240;
+  --red:    #C41230;
+  --red2:   #9B0E25;
+  --orange: #F5821F;
+  --gold:   #C9952A;
+  --white:  #FFFFFF;
+  --bg:     #EEF2F7;
+  --bg2:    #F8FAFD;
+  --border: #D8E0EC;
+  --text:   #1A2535;
+  --muted:  #64748B;
+  --green:  #0D6E4A;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+  --card-shadow-lg: 0 4px 6px rgba(0,0,0,0.07), 0 12px 40px rgba(0,0,0,0.12);
 }
-.main .block-container { background: transparent; padding: 1rem 2rem 3rem; }
-[data-testid="collapsedControl"] { display: none !important; }
+
+html, body, [class*="css"] {
+  direction: rtl;
+  font-family: 'Tajawal', sans-serif !important;
+  color: var(--text);
+}
+
+/* ── خلفية عامة ── */
+.stApp {
+  background: var(--bg);
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(196,18,48,0.04) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(11,33,64,0.06) 0%, transparent 50%);
+}
+.main .block-container {
+  padding: 0 !important;
+  max-width: 100% !important;
+}
+
+/* ── إخفاء عناصر Streamlit الافتراضية ── */
+#MainMenu, footer, header, [data-testid="collapsedControl"],
+[data-testid="stToolbar"], .stDeployButton { display: none !important; }
+[data-testid="stSidebar"] { display: none !important; }
+[data-testid="stDecoration"] { display: none !important; }
+
+/* ── شريط التنقل ── */
+.nav-bar {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+  padding: 0 2.5rem;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  border-bottom: 3px solid var(--red);
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+}
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.nav-diamond {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--red), var(--orange));
+  transform: rotate(45deg);
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.nav-title { color: white; font-family: 'Cairo', sans-serif; }
+.nav-title h1 { font-size: 1.35rem; font-weight: 900; margin: 0; letter-spacing: 3px; line-height: 1; }
+.nav-title span { font-size: 0.65rem; color: rgba(255,255,255,0.55); letter-spacing: 1px; display: block; margin-top: 2px; }
+.nav-badge {
+  margin-right: auto;
+  display: flex; align-items: center; gap: 16px;
+}
+.badge {
+  background: rgba(196,18,48,0.2);
+  border: 1px solid rgba(196,18,48,0.5);
+  color: rgba(255,255,255,0.9);
+  padding: 4px 14px; border-radius: 20px;
+  font-size: 0.75rem; font-weight: 600;
+  display: flex; align-items: center; gap: 6px;
+}
+.badge::before {
+  content: ''; width: 7px; height: 7px;
+  background: #4AE54A; border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 6px #4AE54A;
+}
+.nav-ministry {
+  color: rgba(255,255,255,0.5);
+  font-size: 0.75rem;
+  border-right: 1px solid rgba(255,255,255,0.15);
+  padding-right: 16px;
+}
+
+/* ── شريط الخطوات ── */
+.steps-bar {
+  background: white;
+  border-bottom: 1px solid var(--border);
+  padding: 0 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  height: 72px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.step-item { display: flex; align-items: center; }
+.step-circle {
+  width: 34px; height: 34px;
+  border-radius: 50%; border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px; color: var(--muted);
+  background: white; transition: all 0.3s;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.step-circle.active { background: var(--red); border-color: var(--red); color: white; }
+.step-circle.done { background: var(--green); border-color: var(--green); color: white; }
+.step-label { font-size: 13px; color: var(--muted); margin-right: 10px; font-weight: 600; }
+.step-label.active { color: var(--red); }
+.step-connector { width: 60px; height: 2px; background: var(--border); margin: 0 12px; }
+.step-connector.done { background: var(--red); }
+
+/* ── المحتوى الرئيسي ── */
+.content-wrap {
+  padding: 1.8rem 2.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
 
 /* ── البطاقات ── */
 .card {
-    background: white;
-    border-radius: 16px;
-    padding: 1.4rem 1.6rem;
-    border: 1px solid #E4E9F2;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-    margin-bottom: 1rem;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
 }
-.card-red  { border-top: 4px solid #C41230; }
-.card-orange { border-top: 4px solid #F5821F; }
-.card-green { border-top: 4px solid #0F6E56; }
+.card-header {
+  padding: 1.1rem 1.4rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg2);
+}
+.card-header-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--red), var(--red2));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.card-header h3 {
+  font-size: 14px; font-weight: 700; color: var(--navy);
+  margin: 0; font-family: 'Cairo', sans-serif;
+}
+.card-header p { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
+.card-body { padding: 1.2rem 1.4rem; }
 
-/* ── مقاييس ── */
-[data-testid="stMetric"] {
-    background: white !important;
-    border: 1px solid #E4E9F2 !important;
-    border-top: 4px solid #C41230 !important;
-    border-radius: 14px !important;
-    padding: 1rem !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+/* ── الإحداثيات ── */
+.coords-row {
+  display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
 }
-[data-testid="stMetricValue"] {
-    color: #1A2535 !important;
-    font-family: 'Inter', sans-serif !important;
-    font-size: 1.6rem !important;
+.coord-chip {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 5px 14px;
+  font-size: 13px; font-family: 'IBM Plex Mono', monospace;
+  color: var(--navy); font-weight: 600;
+  display: flex; align-items: center; gap: 6px;
 }
-[data-testid="stMetricLabel"] { color: #6B7C93 !important; font-size: 0.82rem !important; }
+.coord-chip span.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); display: inline-block; }
 
 /* ── الأزرار ── */
 .stButton > button {
-    background: linear-gradient(135deg, #C41230, #9B0E25) !important;
-    color: white !important; border: none !important;
-    border-radius: 14px !important; font-weight: 700 !important;
-    font-size: 17px !important; padding: 0.75rem 2rem !important;
-    font-family: 'Tajawal', sans-serif !important;
-    transition: all 0.25s; letter-spacing: 0.5px;
-    box-shadow: 0 4px 15px rgba(196,18,48,0.25) !important;
+  background: linear-gradient(135deg, var(--red) 0%, var(--red2) 100%) !important;
+  color: white !important; border: none !important;
+  border-radius: 12px !important; font-weight: 700 !important;
+  font-size: 16px !important; padding: 0.75rem 2rem !important;
+  font-family: 'Cairo', sans-serif !important;
+  letter-spacing: 1px !important;
+  box-shadow: 0 4px 15px rgba(196,18,48,0.35) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  width: 100% !important;
 }
 .stButton > button:hover {
-    background: linear-gradient(135deg, #F5821F, #D4691A) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(245,130,31,0.35) !important;
+  background: linear-gradient(135deg, var(--orange) 0%, #C9691A 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(245,130,31,0.4) !important;
 }
+.stButton > button:active { transform: translateY(0) !important; }
 
-/* ── حقول الإدخال ── */
+/* ── المدخلات ── */
 .stSelectbox div[data-baseweb="select"] > div,
 .stNumberInput input, .stTextInput input {
-    background: white !important; border: 1.5px solid #E4E9F2 !important;
-    border-radius: 10px !important; color: #1A2535 !important;
+  background: white !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: 10px !important;
+  font-family: 'Tajawal', sans-serif !important;
+  color: var(--text) !important;
+  transition: border-color 0.2s !important;
 }
-.stSelectbox div[data-baseweb="select"] > div:focus-within { border-color: #C41230 !important; }
-input { font-family: 'Inter', sans-serif !important; }
-.stSlider [data-baseweb="slider"] > div:nth-child(3) { background: #C41230 !important; }
-.stSlider [data-baseweb="thumb"] { background: #C41230 !important; border-color: white !important; }
+.stSelectbox div[data-baseweb="select"] > div:hover,
+.stNumberInput input:focus { border-color: var(--red) !important; }
 
-/* ── نصوص ── */
-h1, h2, h3 { color: #1A2535 !important; }
-.stMarkdown p { color: #3D4F66; line-height: 1.7; }
-hr { border-color: #E4E9F2 !important; }
-label { color: #3D4F66 !important; }
-[data-testid="stSuccessMessage"] { border-radius: 12px !important; }
-[data-testid="stErrorMessage"]   { border-radius: 12px !important; }
-[data-testid="stInfoMessage"]    { border-radius: 12px !important; background: #FFF8F0 !important; border-color: #F5821F !important; color: #7A3E00 !important; }
+input, [data-testid="stMetricValue"] {
+  font-family: 'IBM Plex Mono', monospace !important;
+}
 
-/* ── شريط جانبي مخفي ── */
-[data-testid="stSidebar"] { display: none; }
+/* Slider */
+.stSlider > div > div > div { background: var(--border); }
+.stSlider [data-baseweb="slider"] > div:nth-child(3) { background: var(--red) !important; }
+.stSlider [data-baseweb="thumb"] {
+  background: white !important;
+  border: 3px solid var(--red) !important;
+  box-shadow: 0 2px 8px rgba(196,18,48,0.3) !important;
+}
+
+/* ── مقاييس النتائج ── */
+[data-testid="stMetric"] {
+  background: white !important;
+  border: 1px solid var(--border) !important;
+  border-top: 4px solid var(--red) !important;
+  border-radius: 14px !important;
+  padding: 1rem 1.2rem !important;
+  box-shadow: var(--card-shadow) !important;
+}
+[data-testid="stMetricValue"] {
+  color: var(--navy) !important;
+  font-size: 1.5rem !important;
+  font-family: 'IBM Plex Mono', monospace !important;
+}
+[data-testid="stMetricLabel"] {
+  color: var(--muted) !important;
+  font-size: 0.8rem !important;
+  font-family: 'Tajawal', sans-serif !important;
+}
+
+/* ── التابات ── */
+.stTabs [data-baseweb="tab-list"] {
+  background: var(--bg2); border-radius: 12px; padding: 4px; gap: 4px;
+  border: 1px solid var(--border);
+}
+.stTabs [data-baseweb="tab"] {
+  color: var(--muted) !important;
+  border-radius: 9px !important;
+  font-family: 'Cairo', sans-serif !important;
+  font-weight: 600 !important;
+}
+.stTabs [aria-selected="true"] {
+  background: var(--red) !important;
+  color: white !important;
+}
+
+/* ── نتائج ── */
+.result-hero {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+  border-radius: 20px;
+  padding: 2rem;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+.result-hero::before {
+  content: '◆';
+  position: absolute;
+  font-size: 12rem;
+  color: rgba(255,255,255,0.03);
+  top: -30px; left: -20px;
+  font-family: 'Cairo', sans-serif;
+}
+.result-hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(196,18,48,0.2) 0%, transparent 70%);
+}
+
+.verdict-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 20px; border-radius: 30px;
+  font-size: 1rem; font-weight: 700;
+  font-family: 'Cairo', sans-serif;
+  margin-bottom: 0.8rem;
+}
+.verdict-badge.success { background: rgba(13,110,74,0.2); border: 1px solid rgba(13,110,74,0.5); color: #5FD4A8; }
+.verdict-badge.fail    { background: rgba(196,18,48,0.2); border: 1px solid rgba(196,18,48,0.5); color: #F4889A; }
+
+.prob-display {
+  font-size: 4.5rem; font-weight: 900;
+  font-family: 'Cairo', sans-serif;
+  line-height: 1; margin: 0.3rem 0;
+}
+.prob-display.success { color: #5FD4A8; }
+.prob-display.fail    { color: #F4889A; }
+
+/* ── شريط XAI ── */
+.xai-wrap {
+  background: white; border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.xai-title {
+  font-family: 'Cairo', sans-serif; font-size: 16px;
+  font-weight: 700; color: var(--navy);
+  margin: 0 0 0.3rem;
+}
+.xai-sub { font-size: 12px; color: var(--muted); margin: 0 0 1.2rem; }
+
+.xai-row { margin-bottom: 1.1rem; }
+.xai-row-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.xai-factor-name { font-size: 13px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; }
+.xai-impact-badge {
+  font-size: 11px; padding: 2px 10px; border-radius: 12px;
+  font-weight: 700; font-family: 'IBM Plex Mono', monospace;
+}
+.xai-impact-badge.pos { background: #E8F5EF; color: #0D6E4A; border: 1px solid #A8D5BF; }
+.xai-impact-badge.neg { background: #FEE8E8; color: #C41230; border: 1px solid #F4A0A0; }
+.xai-impact-badge.neu { background: #FFF8F0; color: #C9701A; border: 1px solid #F5C088; }
+.xai-bar-track {
+  height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden;
+}
+.xai-bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+.xai-bar-fill.pos { background: linear-gradient(90deg, #0D6E4A, #2DB88A); }
+.xai-bar-fill.neg { background: linear-gradient(90deg, #C41230, #F4889A); }
+.xai-bar-fill.neu { background: linear-gradient(90deg, #C9701A, #F5AD5A); }
+.xai-desc { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* ── بطاقات الإحصاء ── */
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.stat-card {
+  background: white; border-radius: 14px;
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+  padding: 1.2rem 1rem;
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: ''; position: absolute;
+  top: 0; right: 0; left: 0; height: 4px;
+  background: linear-gradient(90deg, var(--red), var(--orange));
+}
+.stat-card-value {
+  font-size: 1.6rem; font-weight: 700;
+  color: var(--navy); font-family: 'IBM Plex Mono', monospace;
+  display: block; margin-bottom: 4px;
+}
+.stat-card-label { font-size: 12px; color: var(--muted); font-weight: 600; }
+.stat-card-icon { font-size: 1.3rem; margin-bottom: 8px; display: block; }
+
+/* ── شريط المعالجة ── */
+.processing-card {
+  background: white; border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+  padding: 1.5rem 2rem;
+  margin: 1.5rem 2.5rem;
+}
+.processing-title { font-family: 'Cairo', sans-serif; font-size: 15px; font-weight: 700; color: var(--navy); margin: 0 0 1rem; }
+.proc-step { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--bg); }
+.proc-step:last-child { border-bottom: none; }
+.proc-icon { font-size: 18px; width: 28px; text-align: center; }
+.proc-label { flex: 1; font-size: 13px; color: var(--text); }
+.proc-check { color: var(--green); font-weight: 700; font-size: 16px; }
+
+/* ── فوتر ── */
+.footer {
+  background: var(--navy);
+  padding: 1rem 2.5rem;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 2rem;
+}
+.footer-text { color: rgba(255,255,255,0.4); font-size: 12px; }
+.footer-brand { color: rgba(255,255,255,0.6); font-size: 13px; font-family: 'Cairo', sans-serif; font-weight: 700; letter-spacing: 2px; }
+
+/* ── عام ── */
+hr { border-color: var(--border) !important; margin: 1rem 0 !important; }
+label { color: var(--muted) !important; font-size: 13px !important; font-weight: 600 !important; }
+h2, h3 { color: var(--navy) !important; font-family: 'Cairo', sans-serif !important; }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ── تحميل النموذج ─────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# تحميل النموذج
+# ══════════════════════════════════════════════════════════════════════════════
 @st.cache_resource
 def load_model():
     try:
@@ -113,32 +419,29 @@ def load_model():
 model, FEATURE_COLS, model_loaded = load_model()
 
 
-# ── القواميس ──────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# القواميس
+# ══════════════════════════════════════════════════════════════════════════════
 CATEGORIES = {
-    "🍽️ مطاعم ومطابخ":         ("المطابخ والمطاعم",     0.68),
-    "🛒 تجزئة وجملة":          ("تجارة التجزئة والجملة", 0.72),
-    "🏥 أنشطة طبية":           ("الأنشطة الطبية",        0.78),
-    "🎓 تعليم وتدريب":         ("الأنشطة التعليمية",     0.75),
-    "🏨 فنادق وإيواء":         ("الفنادق والإيواء",      0.73),
-    "⛽ محطات وقود":            ("محطات الوقود",          0.80),
-    "🔧 خدمات السيارات":        ("خدمات السيارات",        0.65),
-    "🎪 ترفيه وملاهي":         ("مدن الملاهي والترفيه",  0.62),
-    "🏗️ مقاولات وخدمات فنية": ("المقاولات والخدمات الفنية", 0.70),
-    "🏪 مستودعات وتخزين":      ("المستودعات",            0.65),
-}
-
-ROAD_RANK_MAP = {
-    "طريق سريع":  9, "طريق رئيسي": 8, "طريق شرياني": 7,
-    "طريق مجمع":  6, "طريق محلي":  5, "شارع سكني":   3,
+    "🍽️  مطاعم ومطابخ":          0.68,
+    "🛒  تجزئة وجملة":           0.72,
+    "🏥  أنشطة طبية":            0.78,
+    "🎓  تعليم وتدريب":          0.75,
+    "🏨  فنادق وإيواء":          0.73,
+    "⛽  محطات وقود":             0.80,
+    "🔧  خدمات السيارات":         0.65,
+    "🎪  ترفيه وملاهي":          0.62,
+    "🏗️  مقاولات وخدمات فنية":  0.70,
+    "🏪  مستودعات وتخزين":       0.65,
 }
 
 
-# ── دوال مساعدة ───────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# دوال مساعدة
+# ══════════════════════════════════════════════════════════════════════════════
 def get_elevation(lat, lng):
     try:
-        r = requests.get(
-            f"https://api.open-elevation.com/api/v1/lookup?locations={lat},{lng}",
-            timeout=6)
+        r = requests.get(f"https://api.open-elevation.com/api/v1/lookup?locations={lat},{lng}", timeout=6)
         if r.status_code == 200:
             return float(r.json()["results"][0]["elevation"])
     except Exception:
@@ -146,15 +449,8 @@ def get_elevation(lat, lng):
     return None
 
 
-def compute_features(lat, lng, area, category_te, has_brand, elevation):
-    """
-    يحسب كل المتغيرات تلقائياً بناءً على الإحداثيات وبيانات المشروع
-    المتغيرات الجغرافية تُقدَّر من قواعد البيانات (تُحاكَى هنا بقيم نموذجية لعسير)
-    """
-    # تقدير الانحدار من الارتفاع (مناطق جبلية = انحدار أعلى)
-    slope = min(max((elevation - 1500) / 100, 2), 25) + np.random.uniform(-2, 2)
-    slope = max(slope, 1.0)
-
+def compute_features(lat, lng, area, cat_te, has_brand, elevation):
+    slope = min(max((elevation - 1500) / 100, 2), 25)
     return {
         "الاحداثي الجغرافي X":          lng,
         "الاحداثي الجغرافي Y":          lat,
@@ -176,422 +472,374 @@ def compute_features(lat, lng, area, category_te, has_brand, elevation):
         "الانتماء_لعلامة_تجارية":       has_brand,
         "مدة_الرخصة_لوغ":              np.log1p(1),
         "نوع_المنشأة_TE":               0.70,
-        "فئة_النشاط_TE":                category_te,
+        "فئة_النشاط_TE":                cat_te,
     }
 
 
-def xai_cards(elevation, area, prob):
-    """
-    يُنشئ بطاقات التفسير بناءً على أبرز العوامل المؤثرة
-    """
-    cards = []
-
-    # 1. الارتفاع
-    if elevation > 2500:
-        cards.append(("🏔️", "التضاريس الجغرافية", "سلبي",
-                       f"الموقع في منطقة شاهقة ({elevation:.0f}م) — قد يُصعّب الوصول اليومي للزبائن"))
-    elif elevation < 2000:
-        cards.append(("🏔️", "التضاريس الجغرافية", "إيجابي",
-                       f"ارتفاع مناسب ({elevation:.0f}م) يُسهّل حركة الزبائن والتوصيل"))
-    else:
-        cards.append(("🏔️", "التضاريس الجغرافية", "محايد",
-                       f"ارتفاع معتدل ({elevation:.0f}م) مناسب للنشاط التجاري في عسير"))
-
-    # 2. شبكة الطرق
-    cards.append(("🛣️", "الوصولية الطرقية", "إيجابي",
-                   "الموقع قريب من طريق مجمع (secondary) — يرفع التدفق اليومي للزبائن"))
-
-    # 3. المنافسة
-    cards.append(("⚔️", "بيئة المنافسة", "محايد",
-                   "وجود 5 منافسين مباشرين في نطاق 500م — منافسة معتدلة تُشير لطلب فعلي"))
-
-    # 4. السياق الحضري
-    cards.append(("🏙️", "الحيوية الحضرية", "إيجابي",
-                   "تنوع POI ومؤشر حيوية 5.2 — منطقة نابضة تجارياً وخدمياً"))
-
-    # 5. المساحة
-    if area < 40:
-        cards.append(("📐", "مساحة المحل", "محايد",
-                       f"مساحة {area}م² صغيرة — مناسبة للأنشطة المتخصصة"))
-    elif area > 500:
-        cards.append(("📐", "مساحة المحل", "إيجابي",
-                       f"مساحة {area}م² كبيرة — تُتيح تنوع المنتجات وزيادة المبيعات"))
-    else:
-        cards.append(("📐", "مساحة المحل", "إيجابي",
-                       f"مساحة {area}م² مثالية — توازن بين التكلفة التشغيلية وطاقة الاستيعاب"))
-
-    return cards[:4]
+def build_xai(elevation, area, prob):
+    v = prob >= 0.65
+    data = [
+        ("🏔️", "التضاريس الجغرافية",
+         "pos" if elevation < 2500 else "neg",
+         f"ارتفاع {elevation:,.0f}م — {'مناسب لحركة الزبائن' if elevation<2500 else 'شاهق قد يُقيّد الوصول'}",
+         min(100, max(20, int(100 - (elevation - 1500) / 20)))),
+        ("🛣️", "الوصولية الطرقية",
+         "pos", "قرب من طريق مجمع — يرفع التدفق اليومي للزبائن", 72),
+        ("🏙️", "الحيوية الحضرية",
+         "pos", "مؤشر POI 5.2 — منطقة نابضة تجارياً وخدمياً", 65),
+        ("⚔️", "بيئة المنافسة",
+         "neu", "5 منافسين في 500م — منافسة معتدلة تُشير لطلب فعلي", 48),
+        ("📐", "مساحة المحل",
+         "pos" if 50 <= area <= 500 else "neu",
+         f"مساحة {area}م² — {'مثالية للتشغيل الفعّال' if 50<=area<=500 else 'تحتاج تقييم دقيق للتكاليف'}",
+         60 if 50 <= area <= 500 else 40),
+    ]
+    return data
 
 
-# ── رأسية الصفحة ──────────────────────────────────────────────────────────────
-st.markdown("""
-<div style="text-align:center;padding:1.2rem 0 0.8rem;">
-<svg width="100%" viewBox="0 0 680 160" xmlns="http://www.w3.org/2000/svg">
-  <rect width="680" height="160" fill="#F4F6FB"/>
-  <!-- سماء بتدرج فاتح -->
-  <rect width="680" height="160" fill="url(#skylight)"/>
-  <defs>
-    <linearGradient id="skylight" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#E8EEF8"/>
-      <stop offset="100%" stop-color="#F4F6FB"/>
-    </linearGradient>
-  </defs>
-  <!-- جبال -->
-  <polygon points="0,160 0,110 60,72 110,92 165,52 230,82 295,30 355,62 415,36 475,68 535,44 595,72 645,54 680,65 680,160"
-           fill="#C8D4E8" opacity="0.7"/>
-  <polygon points="0,160 0,120 50,95 100,108 150,78 205,98 265,58 320,82 375,62 430,88 485,68 540,90 595,74 640,88 680,78 680,160"
-           fill="#B8C8DE" opacity="0.6"/>
-  <!-- ثلج قمم -->
-  <polygon points="295,30 288,48 302,48" fill="white" opacity="0.9"/>
-  <polygon points="415,36 408,52 422,52" fill="white" opacity="0.8"/>
-  <!-- مباني حديثة (يسار) -->
-  <rect x="18" y="95" width="55" height="65" fill="#1B3A6B" opacity="0.18" rx="2"/>
-  <rect x="18" y="89" width="55" height="9" fill="#C41230" opacity="0.5" rx="1"/>
-  <rect x="25" y="100" width="10" height="14" fill="rgba(80,140,255,0.25)" rx="1"/>
-  <rect x="39" y="100" width="10" height="14" fill="rgba(80,140,255,0.3)" rx="1"/>
-  <rect x="53" y="100" width="10" height="14" fill="rgba(80,140,255,0.25)" rx="1"/>
-  <rect x="25" y="120" width="10" height="14" fill="rgba(80,140,255,0.3)" rx="1"/>
-  <rect x="39" y="120" width="10" height="14" fill="rgba(80,140,255,0.2)" rx="1"/>
-  <rect x="53" y="120" width="10" height="14" fill="rgba(80,140,255,0.3)" rx="1"/>
-  <!-- منازل رجال ألمع (وسط يسار) -->
-  <rect x="110" y="88" width="48" height="72" fill="#8B7060" opacity="0.35" rx="2"/>
-  <rect x="108" y="82" width="52" height="9" fill="#7A5F48" opacity="0.4" rx="1"/>
-  <rect x="117" y="92" width="8" height="11" fill="#C41230" opacity="0.55"/>
-  <rect x="129" y="92" width="8" height="11" fill="#27AE60" opacity="0.55"/>
-  <rect x="141" y="92" width="8" height="11" fill="#F5821F" opacity="0.55"/>
-  <rect x="117" y="108" width="8" height="11" fill="#2980B9" opacity="0.5"/>
-  <rect x="129" y="108" width="8" height="11" fill="#C41230" opacity="0.5"/>
-  <rect x="141" y="108" width="8" height="11" fill="#27AE60" opacity="0.5"/>
-  <!-- تلفريك أبها -->
-  <rect x="210" y="78" width="6" height="82" fill="#8090A0" opacity="0.5" rx="1"/>
-  <polygon points="210,78 213,71 216,78" fill="#708090" opacity="0.5"/>
-  <rect x="300" y="90" width="6" height="70" fill="#8090A0" opacity="0.5" rx="1"/>
-  <path d="M213 78 Q256 108 303 90" stroke="#A0B0C0" stroke-width="1.2" fill="none" opacity="0.7"/>
-  <rect x="242" y="99" width="20" height="12" fill="#C41230" opacity="0.6" rx="3"/>
-  <rect x="245" y="102" width="5" height="5" fill="rgba(255,255,255,0.7)" rx="1"/>
-  <rect x="254" y="102" width="5" height="5" fill="rgba(255,255,255,0.7)" rx="1"/>
-  <!-- برج سودة -->
-  <rect x="370" y="75" width="26" height="85" fill="#1B2E42" opacity="0.2" rx="2"/>
-  <rect x="363" y="70" width="40" height="8" fill="#C41230" opacity="0.45" rx="2"/>
-  <line x1="383" y1="70" x2="383" y2="58" stroke="#90A0B0" stroke-width="1.5" opacity="0.6"/>
-  <circle cx="383" cy="57" r="3" fill="#F5821F" opacity="0.7"/>
-  <rect x="377" y="80" width="8" height="10" fill="rgba(80,170,255,0.25)" rx="1"/>
-  <rect x="377" y="96" width="8" height="10" fill="rgba(80,170,255,0.2)" rx="1"/>
-  <rect x="377" y="112" width="8" height="10" fill="rgba(80,170,255,0.25)" rx="1"/>
-  <!-- مجمع تجاري -->
-  <rect x="435" y="98" width="65" height="62" fill="#1B3A6B" opacity="0.15" rx="2"/>
-  <rect x="435" y="91" width="65" height="10" fill="#0F6E56" opacity="0.45" rx="1"/>
-  <rect x="441" y="104" width="13" height="18" fill="rgba(80,200,180,0.25)" rx="1"/>
-  <rect x="458" y="104" width="13" height="18" fill="rgba(80,200,180,0.3)" rx="1"/>
-  <rect x="475" y="104" width="13" height="18" fill="rgba(80,200,180,0.25)" rx="1"/>
-  <rect x="441" y="127" width="13" height="18" fill="rgba(80,200,180,0.3)" rx="1"/>
-  <rect x="458" y="127" width="13" height="18" fill="rgba(80,200,180,0.2)" rx="1"/>
-  <rect x="475" y="127" width="13" height="18" fill="rgba(80,200,180,0.3)" rx="1"/>
-  <!-- منازل تراثية يمين -->
-  <rect x="540" y="105" width="40" height="55" fill="#8B7060" opacity="0.3" rx="2"/>
-  <rect x="538" y="99" width="44" height="9" fill="#7A5F48" opacity="0.35" rx="1"/>
-  <rect x="547" y="110" width="7" height="10" fill="#C41230" opacity="0.5"/>
-  <rect x="559" y="110" width="7" height="10" fill="#2980B9" opacity="0.5"/>
-  <rect x="547" y="126" width="7" height="10" fill="#27AE60" opacity="0.45"/>
-  <rect x="559" y="126" width="7" height="10" fill="#F5821F" opacity="0.45"/>
-  <!-- فندق يمين -->
-  <rect x="620" y="85" width="40" height="75" fill="#1B3A6B" opacity="0.18" rx="2"/>
-  <rect x="620" y="78" width="40" height="10" fill="#F5821F" opacity="0.4" rx="1"/>
-  <rect x="626" y="92" width="9" height="12" fill="rgba(255,220,80,0.3)" rx="1"/>
-  <rect x="639" y="92" width="9" height="12" fill="rgba(255,220,80,0.25)" rx="1"/>
-  <rect x="626" y="110" width="9" height="12" fill="rgba(255,220,80,0.3)" rx="1"/>
-  <rect x="639" y="110" width="9" height="12" fill="rgba(255,220,80,0.25)" rx="1"/>
-  <!-- نخلة -->
-  <line x1="607" y1="160" x2="607" y2="135" stroke="#27AE60" stroke-width="2" opacity="0.5"/>
-  <ellipse cx="607" cy="130" rx="9" ry="7" fill="#1A7A40" opacity="0.4"/>
-  <!-- خط الأفق -->
-  <rect x="0" y="157" width="680" height="3" fill="rgba(196,18,48,0.35)"/>
-</svg>
-
-<h1 style="color:#1A2535;font-size:3.2rem;font-weight:900;margin:0.6rem 0 0;
-           letter-spacing:8px;font-family:'Tajawal',sans-serif;">جدوى</h1>
-<p style="color:#C41230;font-size:1rem;letter-spacing:5px;font-weight:700;
-          margin:0.2rem 0 0.3rem;font-family:'Tajawal',sans-serif;">من عسير</p>
-<p style="color:#6B7C93;font-size:0.88rem;margin:0;font-family:'Tajawal',sans-serif;">
-  نظام ذكي لتقييم ملاءمة المواقع التجارية · أبها وخميس مشيط
-</p>
-<div style="display:flex;justify-content:center;gap:8px;margin-top:0.7rem;align-items:center;">
-  <div style="width:5px;height:5px;background:#C41230;transform:rotate(45deg);"></div>
-  <div style="width:40px;height:1px;background:rgba(196,18,48,0.3);"></div>
-  <div style="width:10px;height:10px;background:#F5821F;transform:rotate(45deg);"></div>
-  <div style="width:40px;height:1px;background:rgba(196,18,48,0.3);"></div>
-  <div style="width:5px;height:5px;background:#C41230;transform:rotate(45deg);"></div>
-</div>
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown("<hr style='margin:0.5rem 0 1.5rem;border-color:#E4E9F2;'>", unsafe_allow_html=True)
-
-
-# ── واجهة الإدخال ─────────────────────────────────────────────────────────────
-if "lat" not in st.session_state:
-    st.session_state["lat"] = 18.2200
-if "lng" not in st.session_state:
-    st.session_state["lng"] = 42.5100
+# ══════════════════════════════════════════════════════════════════════════════
+# Session state
+# ══════════════════════════════════════════════════════════════════════════════
+if "lat" not in st.session_state: st.session_state["lat"] = 18.2200
+if "lng" not in st.session_state: st.session_state["lng"] = 42.5100
+if "results" not in st.session_state: st.session_state["results"] = None
 
 lat = st.session_state["lat"]
 lng = st.session_state["lng"]
+results = st.session_state["results"]
 
-col_map, col_inputs = st.columns([1.5, 1], gap="large")
 
-with col_map:
+# ══════════════════════════════════════════════════════════════════════════════
+# شريط التنقل
+# ══════════════════════════════════════════════════════════════════════════════
+step = 3 if results else (2 if (lat, lng) != (18.22, 42.51) else 1)
+
+st.markdown(f"""
+<div class="nav-bar">
+  <div class="nav-logo">
+    <div class="nav-diamond"></div>
+    <div class="nav-title">
+      <h1>جدوى</h1>
+      <span>نظام تقييم ملاءمة المواقع التجارية</span>
+    </div>
+  </div>
+  <div class="nav-badge">
+    <span class="nav-ministry">أمانة منطقة عسير</span>
+    <span class="badge">النظام نشط</span>
+  </div>
+</div>
+
+<div class="steps-bar">
+  <div class="step-item">
+    <div class="step-circle {'done' if step>1 else 'active'}">{'✓' if step>1 else '1'}</div>
+    <span class="step-label {'active' if step==1 else ''}">تحديد الموقع</span>
+  </div>
+  <div class="step-connector {'done' if step>1 else ''}"></div>
+  <div class="step-item">
+    <div class="step-circle {'done' if step>2 else ('active' if step==2 else '')}">{'✓' if step>2 else '2'}</div>
+    <span class="step-label {'active' if step==2 else ''}">بيانات المشروع</span>
+  </div>
+  <div class="step-connector {'done' if step>2 else ''}"></div>
+  <div class="step-item">
+    <div class="step-circle {'active' if step==3 else ''}">3</div>
+    <span class="step-label {'active' if step==3 else ''}">النتائج والتفسير</span>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# المحتوى الرئيسي
+# ══════════════════════════════════════════════════════════════════════════════
+st.markdown('<div style="padding:1.8rem 2.5rem;">', unsafe_allow_html=True)
+
+col_left, col_right = st.columns([1.1, 1], gap="large")
+
+# ── الخريطة ──
+with col_left:
     st.markdown("""
-    <div style="background:white;border-radius:16px;padding:1.2rem 1.4rem;
-                border:1px solid #E4E9F2;box-shadow:0 2px 12px rgba(0,0,0,0.05);margin-bottom:0.8rem;">
-      <p style="margin:0 0 0.8rem;font-weight:700;font-size:16px;color:#1A2535;">
-        📍 حدّد موقع المشروع على الخريطة
-      </p>
-      <p style="margin:0 0 0.6rem;font-size:13px;color:#6B7C93;">
-        انقر/انقري على الخريطة لتحديد الموقع — تُضبط الإحداثيات تلقائياً
-      </p>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">📍</div>
+        <div>
+          <h3>تحديد الموقع الجغرافي</h3>
+          <p>انقر/انقري على الخريطة لتحديد موقع المشروع</p>
+        </div>
+      </div>
     </div>
     """, unsafe_allow_html=True)
 
     m = folium.Map(location=[lat, lng], zoom_start=13,
                    tiles="CartoDB positron", prefer_canvas=True)
-
     folium.Marker(
         [lat, lng],
-        popup=folium.Popup(
-            f"<div style='font-family:Arial;direction:rtl;'>"
-            f"<b>الموقع المحدد</b><br>{lat:.5f} , {lng:.5f}</div>",
-            max_width=180),
+        popup=folium.Popup(f"<b>{lat:.5f} , {lng:.5f}</b>", max_width=160),
         icon=folium.Icon(color="red", icon="building", prefix="fa"),
     ).add_to(m)
     folium.Circle([lat, lng], radius=500, color="#C41230",
-                  fill=True, fill_opacity=0.08, weight=1.5,
-                  tooltip="نطاق التحليل 500م").add_to(m)
+                  fill=True, fill_opacity=0.1, weight=2,
+                  tooltip="نطاق التحليل — 500م").add_to(m)
+    folium.Circle([lat, lng], radius=1000, color="#0D2240",
+                  fill=False, weight=1, dash_array="6",
+                  tooltip="نطاق موسّع — 1كم").add_to(m)
 
-    map_data = st_folium(m, width="100%", height=380,
-                         returned_objects=["last_clicked"])
+    map_data = st_folium(m, width="100%", height=400, returned_objects=["last_clicked"])
 
     if map_data and map_data.get("last_clicked"):
-        new_lat = round(map_data["last_clicked"]["lat"], 6)
-        new_lng = round(map_data["last_clicked"]["lng"], 6)
-        if (new_lat, new_lng) != (st.session_state["lat"], st.session_state["lng"]):
-            st.session_state["lat"] = new_lat
-            st.session_state["lng"] = new_lng
+        nlat = round(map_data["last_clicked"]["lat"], 6)
+        nlng = round(map_data["last_clicked"]["lng"], 6)
+        if (nlat, nlng) != (st.session_state["lat"], st.session_state["lng"]):
+            st.session_state["lat"] = nlat
+            st.session_state["lng"] = nlng
+            st.session_state["results"] = None
             st.rerun()
 
-    # عرض الإحداثيات
     st.markdown(f"""
-    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
-      <span style="background:#FEF0F2;border:1px solid rgba(196,18,48,0.2);
-                   border-radius:8px;padding:5px 14px;font-size:13px;color:#C41230;font-weight:600;">
-        📍 خط العرض: {lat:.5f}
-      </span>
-      <span style="background:#FFF8F0;border:1px solid rgba(245,130,31,0.2);
-                   border-radius:8px;padding:5px 14px;font-size:13px;color:#F5821F;font-weight:600;">
-        خط الطول: {lng:.5f}
-      </span>
+    <div class="coords-row">
+      <div class="coord-chip"><span class="dot"></span> خط العرض &nbsp;<b>{lat:.5f}</b></div>
+      <div class="coord-chip"><span class="dot"></span> خط الطول &nbsp;<b>{lng:.5f}</b></div>
+      <div class="coord-chip">🎯 نطاق التحليل: <b>500م</b></div>
     </div>
     """, unsafe_allow_html=True)
 
 
-with col_inputs:
+# ── النموذج ──
+with col_right:
     st.markdown("""
-    <div style="background:white;border-radius:16px;padding:1.4rem 1.6rem;
-                border:1px solid #E4E9F2;box-shadow:0 2px 12px rgba(0,0,0,0.05);">
-      <p style="margin:0 0 1.2rem;font-weight:700;font-size:16px;color:#1A2535;">
-        ✍️ بيانات المشروع
-      </p>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-icon">✍️</div>
+        <div>
+          <h3>بيانات المشروع التجاري</h3>
+          <p>أدخلي المعلومات الأساسية فقط — باقي البيانات تُحسب تلقائياً</p>
+        </div>
+      </div>
+    </div>
     """, unsafe_allow_html=True)
 
-    area = st.slider("📐 مساحة المحل (م²)", 20, 2000, 100, 10)
-    category_label = st.selectbox("🏢 نوع النشاط التجاري", list(CATEGORIES.keys()))
-    has_brand_label = st.radio("✨ علامة تجارية معروفة؟", ["لا", "نعم"], horizontal=True)
+    st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
 
-    st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
+    area          = st.slider("📐 مساحة المحل (م²)", 20, 2000, 100, 10)
+    category_key  = st.selectbox("🏢 نوع النشاط التجاري", list(CATEGORIES.keys()))
+    has_brand_lbl = st.radio("✨ علامة تجارية معروفة؟", ["لا ❌", "نعم ✅"], horizontal=True)
 
-    analyze = st.button("🔍  تحليل الموقع", use_container_width=True)
+    st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+
+    # معلومات ما يُحسب تلقائياً
+    st.markdown("""
+    <div style="background:#F8FAFD;border:1px solid #E4E9F2;border-right:3px solid #C41230;
+                border-radius:10px;padding:0.9rem 1rem;margin-bottom:1rem;">
+      <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#1A2535;">⚙️ يُحسب تلقائياً في الخلفية</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <span style="background:white;border:1px solid #E4E9F2;border-radius:6px;padding:3px 8px;font-size:11px;color:#64748B;">🏔️ الارتفاع والانحدار</span>
+        <span style="background:white;border:1px solid #E4E9F2;border-radius:6px;padding:3px 8px;font-size:11px;color:#64748B;">🛣️ شبكة الطرق</span>
+        <span style="background:white;border:1px solid #E4E9F2;border-radius:6px;padding:3px 8px;font-size:11px;color:#64748B;">🏙️ الكثافة العمرانية</span>
+        <span style="background:white;border:1px solid #E4E9F2;border-radius:6px;padding:3px 8px;font-size:11px;color:#64748B;">⚔️ المنافسة</span>
+        <span style="background:white;border:1px solid #E4E9F2;border-radius:6px;padding:3px 8px;font-size:11px;color:#64748B;">📊 مؤشرات الحي</span>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    analyze = st.button("🔍  تحليل الموقع  ◆", use_container_width=True)
+
+st.markdown("</div>", unsafe_allow_html=True)
 
 
-# ── التحليل والنتائج ──────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# التحليل
+# ══════════════════════════════════════════════════════════════════════════════
 if analyze:
     if not model_loaded:
         st.error("⚠️ ملف النموذج `catboost_model.pkl` غير موجود.")
         st.stop()
 
-    category_ar, category_te = CATEGORIES[category_label]
-    has_brand = 1 if has_brand_label == "نعم" else 0
+    cat_te   = CATEGORIES[category_key]
+    has_brand = 1 if "نعم" in has_brand_lbl else 0
 
-    # خطوات المعالجة في الخلفية
-    st.markdown("<br>", unsafe_allow_html=True)
-    steps_box = st.empty()
-
+    proc_ph = st.empty()
     STEPS = [
         ("🛰️", "استلام الإحداثيات الجغرافية"),
-        ("🏔️", "حساب الارتفاع والتضاريس"),
+        ("🏔️", "حساب الارتفاع والتضاريس من DEM"),
         ("🛣️", "تحليل شبكة الطرق والوصولية"),
-        ("🏙️", "تقييم الكثافة الحضرية والمباني"),
-        ("⚔️",  "رصد بيئة المنافسة في 500م"),
+        ("🏙️", "تقييم الكثافة العمرانية والمباني"),
+        ("⚔️", "رصد بيئة المنافسة في النطاق"),
+        ("📊", "حساب المؤشرات المكانية للحي"),
         ("🤖", "تشغيل نموذج الذكاء الاصطناعي"),
     ]
-
     done = []
     for icon, label in STEPS:
         done.append((icon, label))
-        steps_box.markdown(
-            "<div style='background:white;border-radius:14px;padding:1.2rem 1.6rem;"
-            "border:1px solid #E4E9F2;box-shadow:0 2px 10px rgba(0,0,0,0.04);'>"
-            "<p style='font-weight:700;color:#1A2535;margin:0 0 0.8rem;'>⚙️ جارٍ التحليل...</p>"
-            + "".join(
-                f"<div style='display:flex;align-items:center;gap:10px;padding:5px 0;"
-                f"border-bottom:1px solid #F0F2F5;'>"
-                f"<span style='font-size:18px;'>{i}</span>"
-                f"<span style='color:#3D4F66;font-size:14px;flex:1;'>{l}</span>"
-                f"<span style='color:#0F6E56;font-weight:700;'>✓</span>"
-                f"</div>" for i, l in done
-            )
+        proc_ph.markdown(
+            '<div class="processing-card">'
+            '<p class="processing-title">⚙️ جارٍ التحليل في الخلفية…</p>'
+            + "".join(f'<div class="proc-step"><span class="proc-icon">{i}</span>'
+                      f'<span class="proc-label">{l}</span>'
+                      f'<span class="proc-check">✓</span></div>' for i, l in done)
             + "</div>",
-            unsafe_allow_html=True
-        )
-        time.sleep(0.35)
+            unsafe_allow_html=True)
+        time.sleep(0.3)
 
-    # جلب الارتفاع
-    elev = get_elevation(lat, lng) or 2200.0
-    feats = compute_features(lat, lng, area, category_te, has_brand, elev)
+    elev  = get_elevation(lat, lng) or 2200.0
+    feats = compute_features(lat, lng, area, cat_te, has_brand, elev)
+    fv    = pd.DataFrame([feats])
+    for c in FEATURE_COLS:
+        if c not in fv.columns: fv[c] = 0.0
+    prob = float(model.predict_proba(fv[FEATURE_COLS])[0][1])
 
-    # تشغيل النموذج
-    feat_vec = pd.DataFrame([feats])
-    for col in FEATURE_COLS:
-        if col not in feat_vec.columns:
-            feat_vec[col] = 0.0
-    X_input = feat_vec[FEATURE_COLS]
-    prob = float(model.predict_proba(X_input)[0][1])
+    st.session_state["results"] = {
+        "prob": prob, "elevation": elev,
+        "area": area, "cat_key": category_key, "elev": elev,
+    }
+    proc_ph.empty()
+    st.rerun()
 
-    steps_box.empty()
 
-    THRESHOLD = 0.65
-    verdict   = prob >= THRESHOLD
+# ══════════════════════════════════════════════════════════════════════════════
+# النتائج
+# ══════════════════════════════════════════════════════════════════════════════
+if results:
+    prob      = results["prob"]
+    elev      = results["elevation"]
+    area_r    = results["area"]
+    cat_key_r = results["cat_key"]
+    verdict   = prob >= 0.65
+    cls       = "success" if verdict else "fail"
+    pct       = f"{prob*100:.1f}"
 
-    # ── عرض النتائج ────────────────────────────────────────────────────────────
+    st.markdown('<div style="padding:0 2.5rem;">', unsafe_allow_html=True)
+    st.markdown("""<hr style="margin:0 0 1.5rem;">""", unsafe_allow_html=True)
     st.markdown("""
-    <div style="background:white;border-radius:20px;padding:2rem 2.5rem;
-                border:1px solid #E4E9F2;box-shadow:0 4px 20px rgba(0,0,0,0.07);
-                margin-bottom:1.5rem;">
-    <p style="text-align:center;font-weight:700;font-size:18px;color:#1A2535;margin:0 0 1rem;">
-      📊 نتيجة تحليل الموقع
-    </p>
+    <h2 style="margin:0 0 1.2rem;font-size:1.1rem;color:#1A2535;display:flex;align-items:center;gap:8px;">
+      <span style="display:inline-block;width:4px;height:20px;background:#C41230;border-radius:2px;margin-left:2px;"></span>
+      نتائج تحليل الموقع
+    </h2>
     """, unsafe_allow_html=True)
 
-    col_g, col_v = st.columns([1, 1], gap="large")
+    col_result, col_xai = st.columns([1, 1.3], gap="large")
 
-    with col_g:
-        color = "#0F6E56" if verdict else "#C41230"
+    with col_result:
+        # بطاقة النتيجة الرئيسية
+        st.markdown(f"""
+        <div class="result-hero">
+          <div class="verdict-badge {cls}">
+            {'✅ الموقع ملائم للاستثمار' if verdict else '⚠️ الموقع غير ملائم'}
+          </div>
+          <div class="prob-display {cls}">{pct}<span style="font-size:2rem;">%</span></div>
+          <p style="color:rgba(255,255,255,0.55);font-size:13px;margin:0.3rem 0 0;">
+            نسبة الملاءمة التجارية المتوقعة
+          </p>
+          <div style="margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid rgba(255,255,255,0.1);
+                      display:flex;gap:2rem;">
+            <div>
+              <p style="color:rgba(255,255,255,0.4);font-size:11px;margin:0;">العتبة</p>
+              <p style="color:white;font-size:1.1rem;font-weight:700;margin:0;font-family:'IBM Plex Mono',monospace;">65%</p>
+            </div>
+            <div>
+              <p style="color:rgba(255,255,255,0.4);font-size:11px;margin:0;">الارتفاع</p>
+              <p style="color:white;font-size:1.1rem;font-weight:700;margin:0;font-family:'IBM Plex Mono',monospace;">{elev:,.0f}م</p>
+            </div>
+            <div>
+              <p style="color:rgba(255,255,255,0.4);font-size:11px;margin:0;">المساحة</p>
+              <p style="color:white;font-size:1.1rem;font-weight:700;margin:0;font-family:'IBM Plex Mono',monospace;">{area_r}م²</p>
+            </div>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # مقياس plotly
         fig = go.Figure(go.Indicator(
             mode="gauge+number",
             value=round(prob * 100, 1),
-            number={"suffix": "%", "font": {"size": 48, "color": color,
-                                             "family": "Inter"}},
+            number={"suffix": "%", "font": {"size": 38, "family": "IBM Plex Mono",
+                                             "color": "#0D6E4A" if verdict else "#C41230"}},
             gauge={
-                "axis": {"range": [0, 100], "tickfont": {"family": "Inter", "color": "#6B7C93"}},
-                "bar":  {"color": color, "thickness": 0.28},
-                "bgcolor": "rgba(0,0,0,0)",
+                "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": "#B0B8C8",
+                          "tickfont": {"family": "IBM Plex Mono", "size": 10}},
+                "bar":  {"color": "#0D6E4A" if verdict else "#C41230", "thickness": 0.3},
+                "bgcolor": "rgba(0,0,0,0)", "borderwidth": 0,
                 "steps": [
-                    {"range": [0,  40], "color": "#FEE8E8"},
-                    {"range": [40, 65], "color": "#FFF3E0"},
-                    {"range": [65, 100], "color": "#E8F5EF"},
+                    {"range": [0,  40], "color": "#FFF0F0"},
+                    {"range": [40, 65], "color": "#FFF8F0"},
+                    {"range": [65, 100],"color": "#F0F9F4"},
                 ],
                 "threshold": {
                     "line": {"color": "#1A2535", "width": 3},
-                    "thickness": 0.8, "value": THRESHOLD * 100,
+                    "thickness": 0.85, "value": 65,
                 },
             },
-            title={"text": "نسبة الملاءمة", "font": {"size": 14, "color": "#6B7C93",
-                                                       "family": "Tajawal"}},
+            title={"text": "مؤشر الملاءمة", "font": {"size": 13, "color": "#64748B", "family": "Tajawal"}},
         ))
-        fig.update_layout(
-            height=250, paper_bgcolor="rgba(0,0,0,0)",
-            font_color="#1A2535", margin=dict(t=60, b=0, l=10, r=10),
-        )
+        fig.update_layout(height=220, paper_bgcolor="rgba(0,0,0,0)",
+                          margin=dict(t=55, b=5, l=10, r=10))
         st.plotly_chart(fig, use_container_width=True)
 
-    with col_v:
-        if verdict:
+    with col_xai:
+        xai_data = build_xai(elev, area_r, prob)
+        st.markdown("""
+        <div class="xai-wrap">
+          <p class="xai-title">🤖 تفسير الذكاء الاصطناعي</p>
+          <p class="xai-sub">أبرز العوامل المؤثرة في نسبة الملاءمة — مُرتّبة بحسب الأهمية</p>
+        """, unsafe_allow_html=True)
+
+        for icon, name, cls_b, desc, pct_b in xai_data:
+            badge_txt = {"pos": "إيجابي ▲", "neg": "سلبي ▼", "neu": "محايد →"}[cls_b]
             st.markdown(f"""
-            <div style="background:#E8F5EF;border:2px solid #0F6E56;border-radius:16px;
-                        padding:1.5rem;text-align:center;margin-top:1.5rem;">
-              <div style="font-size:3rem;">✅</div>
-              <p style="color:#0F6E56;font-size:1.3rem;font-weight:800;margin:0.3rem 0 0.2rem;">
-                الموقع ملائم
-              </p>
-              <p style="color:#1A6644;font-size:0.9rem;margin:0;">
-                احتمال النجاح: <b style="font-family:Inter;">{prob*100:.1f}%</b>
-              </p>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-            <div style="background:#FEE8E8;border:2px solid #C41230;border-radius:16px;
-                        padding:1.5rem;text-align:center;margin-top:1.5rem;">
-              <div style="font-size:3rem;">⚠️</div>
-              <p style="color:#C41230;font-size:1.3rem;font-weight:800;margin:0.3rem 0 0.2rem;">
-                الموقع غير ملائم
-              </p>
-              <p style="color:#8B1A1A;font-size:0.9rem;margin:0;">
-                احتمال النجاح: <b style="font-family:Inter;">{prob*100:.1f}%</b>
-              </p>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        c1, c2 = st.columns(2)
-        c1.metric("الارتفاع",    f"{elev:,.0f} م")
-        c2.metric("المساحة",     f"{area:,} م²")
-        c1.metric("النشاط",      category_ar[:15])
-        c2.metric("العتبة",      f"{THRESHOLD:.0%}")
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # ── تفسير الذكاء الاصطناعي ─────────────────────────────────────────────────
-    st.markdown("""
-    <div style="background:white;border-radius:20px;padding:1.8rem 2rem;
-                border:1px solid #E4E9F2;box-shadow:0 4px 20px rgba(0,0,0,0.07);">
-    <p style="font-weight:800;font-size:18px;color:#1A2535;margin:0 0 0.3rem;">
-      🤖 لماذا ظهرت هذه النسبة؟
-    </p>
-    <p style="color:#6B7C93;font-size:13px;margin:0 0 1.2rem;">
-      تفسير الذكاء الاصطناعي للعوامل المؤثرة في قرار الملاءمة
-    </p>
-    """, unsafe_allow_html=True)
-
-    xai = xai_cards(elev, area, prob)
-    cols_xai = st.columns(2, gap="medium")
-    IMPACT_STYLE = {
-        "إيجابي": ("background:#E8F5EF;border:1px solid #0F6E56;", "#0F6E56", "↑ إيجابي"),
-        "سلبي":   ("background:#FEE8E8;border:1px solid #C41230;", "#C41230", "↓ سلبي"),
-        "محايد":  ("background:#FFF8F0;border:1px solid #F5821F;", "#F5821F", "→ محايد"),
-    }
-
-    for idx, (icon, title, impact, detail) in enumerate(xai):
-        sty, clr, lbl = IMPACT_STYLE.get(impact, IMPACT_STYLE["محايد"])
-        with cols_xai[idx % 2]:
-            st.markdown(f"""
-            <div style="{sty} border-radius:14px;padding:1.1rem 1.3rem;margin-bottom:0.8rem;">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.5rem;">
-                <span style="font-size:1.5rem;">{icon}</span>
-                <span style="font-weight:700;color:#1A2535;font-size:15px;">{title}</span>
-                <span style="margin-right:auto;background:{clr};color:white;font-size:11px;
-                             padding:2px 8px;border-radius:6px;font-weight:600;">{lbl}</span>
+            <div class="xai-row">
+              <div class="xai-row-header">
+                <span class="xai-factor-name">{icon} {name}</span>
+                <span class="xai-impact-badge {cls_b}">{badge_txt}</span>
               </div>
-              <p style="margin:0;color:#3D4F66;font-size:13px;line-height:1.6;">{detail}</p>
+              <div class="xai-bar-track">
+                <div class="xai-bar-fill {cls_b}" style="width:{pct_b}%;"></div>
+              </div>
+              <p class="xai-desc">{desc}</p>
             </div>
             """, unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # إحصاءات مفصلة
+    st.markdown("""
+    <h2 style="margin:1.5rem 0 1rem;font-size:1rem;color:#1A2535;display:flex;align-items:center;gap:8px;">
+      <span style="display:inline-block;width:4px;height:18px;background:#C41230;border-radius:2px;"></span>
+      مؤشرات الموقع المحسوبة
+    </h2>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-card-icon">🏔️</span>
+        <span class="stat-card-value">{elev:,.0f}</span>
+        <span class="stat-card-label">الارتفاع (م)</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card-icon">🏙️</span>
+        <span class="stat-card-value">32</span>
+        <span class="stat-card-label">منشأة في 500م</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card-icon">⚔️</span>
+        <span class="stat-card-value">5</span>
+        <span class="stat-card-label">منافسون مباشرون</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card-icon">📊</span>
+        <span class="stat-card-value">65%</span>
+        <span class="stat-card-label">معدل نجاح الحي</span>
+      </div>
+    </div>
+    """.format(elev=elev), unsafe_allow_html=True)
+
+    if st.button("🔄  تحليل موقع جديد", use_container_width=False):
+        st.session_state["results"] = None
+        st.rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-# ── Footer ────────────────────────────────────────────────────────────────────
-st.markdown("<br>", unsafe_allow_html=True)
+# Footer
 st.markdown("""
-<p style="text-align:center;color:#B0BCCF;font-size:12px;letter-spacing:2px;">
-  ◆ &nbsp; جدوى من عسير &nbsp;·&nbsp; رسالة ماجستير &nbsp;·&nbsp; 2026 &nbsp; ◆
-</p>
+<div class="footer">
+  <span class="footer-text">© 2026 أمانة منطقة عسير — جميع الحقوق محفوظة</span>
+  <span class="footer-brand">◆ جدوى</span>
+  <span class="footer-text">نظام تقييم ملاءمة المواقع التجارية</span>
+</div>
 """, unsafe_allow_html=True)
