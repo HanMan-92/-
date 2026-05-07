@@ -732,6 +732,64 @@ with col_res:
 
 st.markdown("</div>", unsafe_allow_html=True)
 
+# ══════════════════════════════════════════════════════════════════════════════
+# معالجة التحليل عند الضغط على الزر
+# ══════════════════════════════════════════════════════════════════════════════
+if analyze:
+    if not model_ok:
+        st.error("ملف النموذج غير موجود — تأكد من رفع catboost_model.pkl")
+        st.stop()
+
+    cat_te = CATEGORIES[category]
+    brand  = 1 if brand_lbl == "نعم" else 0
+    ph     = st.empty()
+
+    STEPS = [
+        "جلب الإحداثيات الجغرافية",
+        "حساب الارتفاع والتضاريس",
+        "تحليل شبكة الطرق",
+        "تقييم الكثافة العمرانية",
+        "رصد بيئة المنافسة",
+        "تشغيل نموذج الذكاء الاصطناعي",
+    ]
+    done = []
+    for s in STEPS:
+        done.append(s)
+        rows = "".join(
+            "<div style='display:flex;align-items:center;gap:10px;padding:6px 0;"
+            "border-bottom:1px solid #F1F5F9;'>"
+            "<span style='flex:1;font-size:13px;color:#0F172A;font-family:Cairo,sans-serif;'>" + r + "</span>"
+            "<span style='color:#059669;font-weight:700;'>✓</span></div>"
+            for r in done
+        )
+        ph.markdown(
+            "<div style='background:white;border-radius:12px;border:1px solid #CBD5E1;"
+            "padding:1.4rem;margin:1rem 2rem;'>"
+            "<p style='font-family:Cairo,sans-serif;font-size:14px;font-weight:700;"
+            "color:#0F172A;margin:0 0 0.9rem;'>جارٍ التحليل…</p>"
+            + rows + "</div>",
+            unsafe_allow_html=True
+        )
+        time.sleep(0.3)
+
+    elev  = get_elev(lat, lng) or 2200.0
+    feats = compute_features(lat, lng, area, cat_te, brand, elev)
+    fv    = pd.DataFrame([feats])
+    for c in FEATURE_COLS:
+        if c not in fv.columns:
+            fv[c] = 0.0
+    fv   = fv[FEATURE_COLS]
+    prob = float(model.predict_proba(fv)[0][1])
+
+    st.session_state["results"] = {
+        "prob": prob, "elev": elev,
+        "area": area, "cat": category,
+        "fv":   fv.values.tolist(),
+    }
+    ph.empty()
+    st.rerun()
+
+
 # Footer
 st.markdown("""
 <div class="g-footer">
