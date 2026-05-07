@@ -162,45 +162,10 @@ hr { border-color: rgba(196,18,48,0.3) !important; margin: 1rem 0 !important; }
 # ─────────────────────────────────────────────────────────────────────────────
 # رأسية البطل — "جدوى من عسير" + أفق عمراني
 # ─────────────────────────────────────────────────────────────────────────────
-st.markdown("""
-<div style="
-    border-radius:20px;
-    margin-bottom:1.8rem;
-    border:1px solid rgba(245,130,31,0.35);
-    background:linear-gradient(135deg,rgba(196,18,48,0.82) 0%,rgba(27,58,107,0.88) 50%,rgba(13,27,42,0.95) 100%);
-    padding:2.5rem; text-align:center;
-">
-    <!-- ماسات الزوايا بـ CSS فقط -->
-    <div style="display:flex;justify-content:center;gap:8px;margin-bottom:1.2rem;align-items:flex-end;">
-        <div style="width:8px;height:30px;background:rgba(196,18,48,0.6);border-radius:2px;"></div>
-        <div style="width:8px;height:45px;background:rgba(245,130,31,0.7);border-radius:2px;"></div>
-        <div style="width:8px;height:60px;background:rgba(196,18,48,0.8);border-radius:2px;"></div>
-        <div style="width:8px;height:75px;background:#1B3A6B;border-radius:2px;border:1px solid rgba(245,130,31,0.5);"></div>
-        <div style="width:8px;height:90px;background:#C41230;border-radius:2px;"></div>
-        <div style="width:8px;height:110px;background:#1B3A6B;border-radius:2px;border:1px solid #F5821F;"></div>
-        <div style="width:8px;height:95px;background:#C41230;border-radius:2px;"></div>
-        <div style="width:8px;height:80px;background:#1B3A6B;border-radius:2px;border:1px solid rgba(245,130,31,0.4);"></div>
-        <div style="width:8px;height:65px;background:rgba(245,130,31,0.7);border-radius:2px;"></div>
-        <div style="width:8px;height:50px;background:rgba(196,18,48,0.6);border-radius:2px;"></div>
-        <div style="width:8px;height:35px;background:rgba(245,130,31,0.5);border-radius:2px;"></div>
-    </div>
-    <div style="height:1px;background:rgba(245,130,31,0.4);margin-bottom:1.5rem;"></div>
-
-    <h1 style="color:white;font-size:4rem;font-weight:900;margin:0;letter-spacing:8px;">جدوى</h1>
-    <p style="color:#F5821F;font-size:1.05rem;margin:0.3rem 0 0.8rem;font-weight:500;letter-spacing:5px;">من عسير</p>
-    <p style="color:rgba(255,255,255,0.65);font-size:0.88rem;margin:0;">
-        نظام ذكي لتقييم ملاءمة المواقع التجارية · أبها وخميس مشيط
-    </p>
-
-    <div style="display:flex;justify-content:center;gap:10px;margin-top:1.2rem;align-items:center;">
-        <div style="width:5px;height:5px;background:#C41230;transform:rotate(45deg);"></div>
-        <div style="width:50px;height:1px;background:rgba(245,130,31,0.35);"></div>
-        <div style="width:12px;height:12px;background:#F5821F;transform:rotate(45deg);"></div>
-        <div style="width:50px;height:1px;background:rgba(245,130,31,0.35);"></div>
-        <div style="width:5px;height:5px;background:#C41230;transform:rotate(45deg);"></div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center;color:white;font-size:3.8rem;font-weight:900;letter-spacing:8px;margin:0.5rem 0 0;padding-top:1rem;'>جدوى</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;color:#F5821F;font-size:1rem;letter-spacing:5px;font-weight:500;margin:0.2rem 0;'>من عسير</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;color:rgba(255,255,255,0.6);font-size:0.85rem;margin:0 0 0.5rem;'>نظام ذكي لتقييم ملاءمة المواقع التجارية · أبها وخميس مشيط</p>", unsafe_allow_html=True)
+st.markdown("<hr style='border-color:rgba(196,18,48,0.4);margin:0.8rem 0 1.5rem;'>", unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
