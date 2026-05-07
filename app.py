@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 import joblib, time, requests
 import folium, plotly.graph_objects as go
-import shap
+from catboost import Pool
 from streamlit_folium import st_folium
 
 st.set_page_config(page_title="جدوى · أمانة عسير", page_icon="◆",
@@ -430,10 +430,14 @@ model, FEATURE_COLS, model_loaded = load_model()
 # ══════════════════════════════════════════════════════════════════════════════
 # SHAP TreeExplainer — التفسير الحقيقي من النموذج
 # ══════════════════════════════════════════════════════════════════════════════
-@st.cache_resource
-def get_shap_explainer(_model):
-    """TreeExplainer يعمل مباشرة مع CatBoost دون الحاجة لبيانات خلفية"""
-    return shap.TreeExplainer(_model)
+# CatBoost SHAP مدمج — لا يحتاج مكتبة خارجية
+def get_catboost_shap(model, X_df):
+    """يستخدم SHAP المدمج في CatBoost مباشرةً"""
+    pool = Pool(X_df)
+    # يُعيد array شكله (n_samples, n_features + 1)
+    # العنصر الأخير هو القيمة الأساسية (bias)
+    shap_matrix = model.get_feature_importance(pool, type="ShapValues")
+    return shap_matrix
 
 FEATURE_ARABIC = {
     "الاحداثي الجغرافي X":          ("📍", "الموقع — خط الطول"),
@@ -462,36 +466,32 @@ FEATURE_ARABIC = {
 
 def compute_real_shap(model, X_input, feature_cols):
     """
-    يحسب قيم SHAP الحقيقية من نموذج CatBoost
+    يحسب قيم SHAP باستخدام CatBoost المدمج
     القيمة الموجبة → يرفع احتمال الملاءمة
     القيمة السالبة → يخفض احتمال الملاءمة
     """
     try:
-        explainer  = get_shap_explainer(model)
-        shap_vals  = explainer.shap_values(X_input)
-
-        # CatBoost يُعيد array بشكل (n_samples, n_features)
-        if isinstance(shap_vals, list):
-            vals = shap_vals[1][0]   # الفئة الإيجابية
-        else:
-            vals = shap_vals[0] if shap_vals.ndim == 2 else shap_vals
+        shap_matrix = get_catboost_shap(model, X_input)
+        # shap_matrix شكله (n_samples, n_features + 1)
+        # نأخذ أول صف (n_features) ونتجاهل آخر عمود (bias)
+        vals     = shap_matrix[0][:-1]
+        bias_val = shap_matrix[0][-1]   # القيمة الأساسية
 
         total_abs = np.sum(np.abs(vals)) + 1e-9
 
         results = []
         for feat, val in zip(feature_cols, vals):
             icon, arabic_name = FEATURE_ARABIC.get(feat, ("◆", feat))
-            impact   = "pos" if val > 0 else ("neg" if val < 0 else "neu")
-            pct_bar  = int(min(99, abs(val) / total_abs * 500))   # نسبة مرئية مُكبَّرة
-            sign_txt = f"+{val:.3f}" if val > 0 else f"{val:.3f}"
+            impact   = "pos" if val > 0.001 else ("neg" if val < -0.001 else "neu")
+            pct_bar  = int(min(99, abs(val) / total_abs * 600))
+            sign_txt = f"+{val:.4f}" if val >= 0 else f"{val:.4f}"
             results.append((icon, arabic_name, impact, val, pct_bar, sign_txt, feat))
 
-        # ترتيب حسب الأثر المطلق — أعلى 5
         results.sort(key=lambda x: abs(x[3]), reverse=True)
-        return results[:5], True
+        return results[:5], True, bias_val
 
     except Exception as e:
-        return None, False
+        return None, False, 0.0
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -866,18 +866,17 @@ if results:
 
     with col_xai:
         # ── SHAP الحقيقي ──────────────────────────────────────────────────
-        shap_data, shap_ok = compute_real_shap(model, fv[FEATURE_COLS], FEATURE_COLS)
+        shap_data, shap_ok, bias_val = compute_real_shap(model, fv[FEATURE_COLS], FEATURE_COLS)
 
         if shap_ok and shap_data:
             badge_map = {"pos": "إيجابي ▲", "neg": "سلبي ▼", "neu": "محايد →"}
 
-            # توضيح معنى القيمة الأساسية
-            base_val = get_shap_explainer(model).expected_value
-            base_pct = float(
-                1 / (1 + __import__('math').exp(-base_val))
-                if not isinstance(base_val, (list, __import__('numpy').ndarray))
-                else 1 / (1 + __import__('math').exp(-base_val[1]))
-            ) * 100
+            # القيمة الأساسية من CatBoost SHAP
+            import math
+            try:
+                base_pct = 1 / (1 + math.exp(-bias_val)) * 100
+            except Exception:
+                base_pct = 50.0
 
             st.markdown(f"""
             <div class="xai-wrap">
