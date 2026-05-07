@@ -510,24 +510,28 @@ CATEGORIES = {
     "🏪  مستودعات وتخزين":       0.65,
 }
 
-# طبقات الخريطة — محفوظة في session_state لتستمر عبر إعادة التشغيل
+# طبقات الخريطة — تُظهر الشوارع والأماكن والمرافق
 TILES = {
-    "🏔️ تضاريس": (
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}",
-        "Esri World Shaded Relief"
-    ),
-    "🛰️ صور جوية": (
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        "Esri World Imagery"
-    ),
-    "🗺️ طبوغرافية": (
-        "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
-        "OpenTopoMap contributors"
-    ),
-    "⬜ نظيفة": (
-        "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-        "CartoDB"
-    ),
+    "🗺️ خريطة الشوارع": {
+        "url": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "attr": "© OpenStreetMap contributors",
+        "overlay_url": None,
+    },
+    "🛰️ صور جوية + شوارع": {
+        "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        "attr": "Esri World Imagery",
+        "overlay_url": "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+    },
+    "🏙️ خريطة حضرية": {
+        "url": "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+        "attr": "© CartoDB",
+        "overlay_url": None,
+    },
+    "🏔️ تضاريس + شوارع": {
+        "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+        "attr": "Esri World Topo Map",
+        "overlay_url": None,
+    },
 }
 
 
