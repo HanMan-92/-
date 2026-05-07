@@ -22,6 +22,40 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap');
 
+/* فرض خط Cairo على كل عنصر في الصفحة */
+*, *::before, *::after {
+  font-family: 'Cairo', 'Arial', sans-serif !important;
+}
+input, code, pre, .stCodeBlock, [data-testid="stMetricValue"],
+.g-coord-chip, .hero-stat-v, .res-num, .res-item-v, .stat-v {
+  font-family: 'IBM Plex Mono', 'Courier New', monospace !important;
+}
+
+/* ── إصلاح حقل المساحة (number_input) في وضع RTL ── */
+[data-testid="stNumberInput"] {
+  direction: ltr !important;
+}
+[data-testid="stNumberInput"] input {
+  direction: ltr !important;
+  text-align: right !important;
+  font-family: 'IBM Plex Mono', monospace !important;
+}
+[data-testid="stNumberInputStepDown"],
+[data-testid="stNumberInputStepUp"] {
+  pointer-events: all !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+  position: relative !important;
+}
+button[data-testid="stNumberInputStepDown"],
+button[data-testid="stNumberInputStepUp"] {
+  background: rgba(185,28,28,0.08) !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 6px !important;
+  color: #B91C1C !important;
+  font-weight: 700 !important;
+}
+
 :root {
   --navy:    #071626;
   --navy2:   #0D2240;
@@ -636,32 +670,96 @@ lng = st.session_state["lng"]
 # HERO
 # ══════════════════════════════════════════════════════════════════════════════
 st.markdown("""
-<div class="hero">
-  <div style="position:relative;z-index:1;">
-    <div class="hero-badge">GEOXAI · SITE INTELLIGENCE · ASEER</div>
-    <h1>جدوى <span>— مرشد الاستثمار التجاري</span></h1>
-    <div class="hero-divider"></div>
-    <p class="hero-sub">منصة تحليلية للتنبؤ باستدامة المشاريع التجارية في أبها وخميس مشيط — منطقة عسير</p>
-    <div class="hero-stats">
-      <div class="hero-stat">
-        <span class="hero-stat-v">21</span>
-        <span class="hero-stat-l">متغيراً تحليلياً</span>
-        <span class="hero-stat-s">جغرافية · حضرية · تنافسية</span>
+<div style="
+  background:linear-gradient(135deg,#071626 0%,#0D2240 60%,#0A1E35 100%);
+  position:relative;overflow:hidden;
+">
+  <!-- شريط التنقل مدمج مع الـ Hero -->
+  <div style="
+    display:flex;align-items:center;padding:0 2rem;height:56px;
+    border-bottom:2px solid #B91C1C;
+    background:rgba(0,0,0,0.2);
+  ">
+    <div style="
+      width:34px;height:34px;flex-shrink:0;
+      background:linear-gradient(135deg,#B91C1C,#DC2626);
+      transform:rotate(45deg);border-radius:4px;
+    "></div>
+    <div style="margin-right:14px;">
+      <span style="
+        font-family:'Cairo',sans-serif;font-size:1.2rem;
+        font-weight:900;color:white;letter-spacing:3px;
+      ">جدوى</span>
+      <span style="
+        font-family:'Cairo',sans-serif;font-size:0.62rem;
+        color:rgba(255,255,255,0.4);margin-right:8px;letter-spacing:1px;
+      ">مرشد الاستثمار التجاري</span>
+    </div>
+    <div style="flex:1;"></div>
+    <span style="
+      font-family:'Cairo',sans-serif;
+      color:rgba(255,255,255,0.45);font-size:0.78rem;
+      padding-left:14px;border-left:1px solid rgba(255,255,255,0.1);
+    ">أمانة منطقة عسير</span>
+    <div style="
+      margin-left:12px;display:flex;align-items:center;gap:6px;
+      color:rgba(255,255,255,0.7);font-size:0.72rem;
+      background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);
+      padding:3px 10px;border-radius:20px;font-family:'Cairo',sans-serif;
+    ">
+      <span style="width:6px;height:6px;border-radius:50%;background:#22C55E;display:inline-block;"></span>
+      النظام فعّال
+    </div>
+  </div>
+
+  <!-- محتوى الـ Hero -->
+  <div style="padding:2.5rem 2rem 2rem;position:relative;z-index:1;">
+    <div style="
+      display:inline-block;
+      background:rgba(185,28,28,0.2);border:1px solid rgba(185,28,28,0.4);
+      color:rgba(255,255,255,0.7);font-size:10px;font-weight:700;
+      letter-spacing:2px;padding:4px 12px;border-radius:4px;
+      font-family:'Cairo',sans-serif;margin-bottom:1rem;
+    ">GEOXAI · SITE INTELLIGENCE · ASEER</div>
+
+    <h1 style="
+      font-family:'Cairo',sans-serif !important;
+      font-size:2.8rem !important;font-weight:900 !important;
+      color:white !important;margin:0 0 0.3rem !important;
+      line-height:1.2 !important;letter-spacing:1px !important;
+    ">جدوى
+      <span style="color:rgba(255,255,255,0.35);font-weight:400;font-size:2rem;">
+        — مرشد الاستثمار التجاري
+      </span>
+    </h1>
+
+    <div style="width:50px;height:3px;background:linear-gradient(90deg,#B91C1C,transparent);margin:0.7rem 0 1.2rem;"></div>
+
+    <p style="
+      color:rgba(255,255,255,0.5);font-size:0.9rem;margin:0 0 1.8rem;
+      font-family:'Cairo',sans-serif;
+    ">منصة تحليلية للتنبؤ باستدامة المشاريع التجارية في أبها وخميس مشيط — منطقة عسير</p>
+
+    <div style="display:flex;gap:1.2rem;flex-wrap:wrap;">
+      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:1rem 1.3rem;min-width:140px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:1.9rem;font-weight:600;color:white;display:block;line-height:1;">21</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.45);font-family:'Cairo',sans-serif;display:block;margin-top:3px;">متغيراً تحليلياً</span>
+        <span style="font-size:10px;color:rgba(255,255,255,0.22);font-family:'Cairo',sans-serif;display:block;margin-top:1px;">جغرافية · حضرية · تنافسية</span>
       </div>
-      <div class="hero-stat">
-        <span class="hero-stat-v">0.81</span>
-        <span class="hero-stat-l">دقة النموذج (AUC)</span>
-        <span class="hero-stat-s">تحقق زمني ومكاني · CatBoost</span>
+      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:1rem 1.3rem;min-width:140px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:1.9rem;font-weight:600;color:white;display:block;line-height:1;">0.81</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.45);font-family:'Cairo',sans-serif;display:block;margin-top:3px;">دقة النموذج (AUC)</span>
+        <span style="font-size:10px;color:rgba(255,255,255,0.22);font-family:'Cairo',sans-serif;display:block;margin-top:1px;">تحقق زمني · CatBoost</span>
       </div>
-      <div class="hero-stat">
-        <span class="hero-stat-v">22,917</span>
-        <span class="hero-stat-l">رخصة تجارية</span>
-        <span class="hero-stat-s">بيانات رسمية من أمانة عسير</span>
+      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:1rem 1.3rem;min-width:140px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:1.9rem;font-weight:600;color:white;display:block;line-height:1;">22,917</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.45);font-family:'Cairo',sans-serif;display:block;margin-top:3px;">رخصة تجارية</span>
+        <span style="font-size:10px;color:rgba(255,255,255,0.22);font-family:'Cairo',sans-serif;display:block;margin-top:1px;">بيانات رسمية · أمانة عسير</span>
       </div>
-      <div class="hero-stat">
-        <span class="hero-stat-v">F0.5</span>
-        <span class="hero-stat-l">مقياس الأداء</span>
-        <span class="hero-stat-s">يُغلِّب الدقة على الاسترجاع</span>
+      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:1rem 1.3rem;min-width:140px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:1.9rem;font-weight:600;color:white;display:block;line-height:1;">F0.5</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.45);font-family:'Cairo',sans-serif;display:block;margin-top:3px;">مقياس الأداء</span>
+        <span style="font-size:10px;color:rgba(255,255,255,0.22);font-family:'Cairo',sans-serif;display:block;margin-top:1px;">يُغلِّب الدقة على الاسترجاع</span>
       </div>
     </div>
   </div>
@@ -706,208 +804,200 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 tile_url, tile_attr, tile_ov = TILES[st.session_state["tile"]]
-m = folium.Map(location=[lat, lng], zoom_start=15,
-               tiles=tile_url, attr=tile_attr)
-if tile_ov:
-    folium.TileLayer(tiles=tile_ov, attr="Esri", overlay=True).add_to(m)
 
-# علامة الموقع الحالي
-folium.Marker(
-    [lat, lng],
-    popup=folium.Popup(
-        f"<div dir='rtl' style='font-family:Arial;'><b>الموقع المحدد</b>"
-        f"<br>{lat:.5f} ، {lng:.5f}</div>", max_width=160),
-    icon=folium.Icon(color="red", icon="map-marker", prefix="fa"),
-    tooltip="الموقع الحالي",
-).add_to(m)
+# ── تخطيط ثنائي العمود: الخريطة يسار | النتائج يمين ─────────────────────
+col_map, col_res = st.columns([1.3, 1], gap="large")
 
-folium.Circle([lat, lng], radius=500, color="#B91C1C",
-              fill=True, fill_opacity=0.07, weight=2,
-              tooltip="نطاق التحليل 500م").add_to(m)
-
-mk  = f"m{st.session_state['tile'][:4]}{round(lat,3)}{round(lng,3)}"
-out = st_folium(m, key=mk, width="100%", height=440,
-                returned_objects=["last_clicked", "center"])
-
-# تحديد الموقع: طريقتان
-# ① من النقر المباشر
-_clicked_lat, _clicked_lng = lat, lng
-if out and out.get("last_clicked"):
-    _lc = out["last_clicked"]
-    _clicked_lat = round(_lc["lat"], 5)
-    _clicked_lng = round(_lc["lng"], 5)
-
-# ② من مركز الخريطة الحالي
-_center_lat, _center_lng = lat, lng
-if out and out.get("center"):
-    _center_lat = round(out["center"]["lat"], 5)
-    _center_lng = round(out["center"]["lng"], 5)
-
-# عرض الإحداثيات وأزرار التأكيد
-col_coord, col_btn = st.columns([3, 1])
-with col_coord:
-    st.markdown(f"""
-    <div class="coord-bar">
-      <div class="coord-chip"><span class="coord-dot"></span>خط العرض <b>{lat:.5f}</b></div>
-      <div class="coord-chip"><span class="coord-dot"></span>خط الطول <b>{lng:.5f}</b></div>
-      <div class="coord-chip">نطاق التحليل <b>500م</b></div>
+with col_map:
+    st.markdown("""
+    <div style="font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;
+                color:#1A1208;display:flex;align-items:center;gap:8px;margin-bottom:0.8rem;">
+      <span style="display:inline-block;width:4px;height:16px;background:#B91C1C;border-radius:2px;"></span>
+      تحديد الموقع الجغرافي
     </div>
     """, unsafe_allow_html=True)
 
-with col_btn:
-    # زر "تثبيت مركز الخريطة" — الطريقة الأكثر موثوقية
-    if st.button("📍 تثبيت الموقع", help="انقل الخريطة إلى الموقع المراد ثم اضغط هذا الزر"):
-        if abs(_center_lat - lat) > 0.0001 or abs(_center_lng - lng) > 0.0001:
-            st.session_state.update({"lat": _center_lat, "lng": _center_lng,
-                                      "results": None, "_lc": (_center_lat, _center_lng)})
-            st.rerun()
+    m = folium.Map(location=[lat, lng], zoom_start=15,
+                   tiles=tile_url, attr=tile_attr)
+    if tile_ov:
+        folium.TileLayer(tiles=tile_ov, attr="Esri", overlay=True).add_to(m)
 
-# معالجة النقر المباشر أيضاً
-if out and out.get("last_clicked"):
-    _lt = (_clicked_lat, _clicked_lng)
-    if _lt != st.session_state["_lc"] and (
-        abs(_clicked_lat - lat) > 0.0001 or abs(_clicked_lng - lng) > 0.0001):
-        st.session_state.update({"lat": _clicked_lat, "lng": _clicked_lng,
-                                  "_lc": _lt, "results": None})
+    folium.Marker(
+        [lat, lng],
+        popup=folium.Popup(
+            "<div dir='rtl' style='font-family:Arial;'><b>الموقع المحدد</b>"
+            "<br>" + str(round(lat,5)) + " ، " + str(round(lng,5)) + "</div>",
+            max_width=160),
+        icon=folium.Icon(color="red", icon="map-marker", prefix="fa"),
+    ).add_to(m)
+    folium.Circle([lat, lng], radius=500, color="#B91C1C",
+                  fill=True, fill_opacity=0.07, weight=2).add_to(m)
+
+    mk  = "m" + st.session_state["tile"][:4] + str(round(lat,3)) + str(round(lng,3))
+    out = st_folium(m, key=mk, width="100%", height=400,
+                    returned_objects=["last_clicked","center"])
+
+    # تثبيت الموقع
+    _cl = None
+    _ce = None
+    if out and out.get("last_clicked"):
+        _cl = (round(out["last_clicked"]["lat"],5), round(out["last_clicked"]["lng"],5))
+    if out and out.get("center"):
+        _ce = (round(out["center"]["lat"],5), round(out["center"]["lng"],5))
+
+    c1, c2 = st.columns([3,1])
+    with c1:
+        st.markdown(
+            "<div style='display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;'>"
+            "<span style='background:#F8FAFC;border:1px solid #CBD5E1;border-radius:6px;"
+            "padding:4px 10px;font-family:IBM Plex Mono,monospace;font-size:12px;'>"
+            "خط العرض <b>" + str(lat) + "</b></span>"
+            "<span style='background:#F8FAFC;border:1px solid #CBD5E1;border-radius:6px;"
+            "padding:4px 10px;font-family:IBM Plex Mono,monospace;font-size:12px;'>"
+            "خط الطول <b>" + str(lng) + "</b></span>"
+            "<span style='background:#F8FAFC;border:1px solid #CBD5E1;border-radius:6px;"
+            "padding:4px 10px;font-size:12px;'>نطاق <b>500م</b></span>"
+            "</div>", unsafe_allow_html=True)
+    with c2:
+        if st.button("📍 تثبيت", help="اسحب الخريطة إلى الموقع ثم اضغط تثبيت"):
+            if _ce and (abs(_ce[0]-lat)>0.0001 or abs(_ce[1]-lng)>0.0001):
+                st.session_state.update({"lat":_ce[0],"lng":_ce[1],"results":None,"_lc":_ce})
+                st.rerun()
+
+    if _cl and _cl != st.session_state["_lc"] and (abs(_cl[0]-lat)>0.0001 or abs(_cl[1]-lng)>0.0001):
+        st.session_state.update({"lat":_cl[0],"lng":_cl[1],"_lc":_cl,"results":None})
         st.rerun()
 
-st.caption("💡 تلميح: حرّك الخريطة حتى يكون الموقع في مركزها، ثم اضغط 'تثبيت الموقع' — أو انقر مباشرة على الخريطة")
+    lat = st.session_state["lat"]
+    lng = st.session_state["lng"]
 
-lat = st.session_state["lat"]
-lng = st.session_state["lng"]
+    if not in_study_area(lat, lng):
+        st.warning("⚠️ الموقع خارج نطاق الدراسة (أبها وخميس مشيط) — النتائج قد تكون غير دقيقة.")
 
-st.markdown("</div>", unsafe_allow_html=True)
+    st.caption("💡 حرّك الخريطة إلى الموقع المطلوب ثم اضغط 'تثبيت' — أو انقر مباشرة")
 
-# ══════════════════════════════════════════════════════════════════════════════
-# التحليل
-# ══════════════════════════════════════════════════════════════════════════════
-if analyze:
-    if not model_ok:
-        st.error("ملف النموذج غير موجود.")
-        st.stop()
+# ── لوحة النتائج (يمين) ─────────────────────────────────────────────────────
+with col_res:
+    R       = st.session_state.get("results")
+    has_res = R is not None
 
-    cat_te = CATEGORIES[category]
-    brand  = 1 if brand_lbl == "نعم" else 0
-    ph     = st.empty()
-
-    STEPS = ["جلب الإحداثيات الجغرافية", "حساب الارتفاع من DEM",
-             "تحليل شبكة الطرق", "تقييم الكثافة العمرانية",
-             "رصد بيئة المنافسة", "تشغيل نموذج الذكاء الاصطناعي"]
-    done = []
-    for s in STEPS:
-        done.append(s)
-        rows = "".join(f'<div class="proc-row"><span class="proc-lbl">{r}</span>'
-                       f'<span class="proc-ok">✓</span></div>' for r in done)
-        ph.markdown(f'<div class="proc-card"><p class="proc-title">جارٍ التحليل…</p>{rows}</div>',
-                    unsafe_allow_html=True)
-        time.sleep(0.3)
-
-    elev  = get_elev(lat, lng) or 2200.0
-    feats = compute_features(lat, lng, area, cat_te, brand, elev)
-    fv    = pd.DataFrame([feats])
-    for c in FEATURE_COLS:
-        if c not in fv.columns: fv[c] = 0.0
-    fv   = fv[FEATURE_COLS]
-    prob = float(model.predict_proba(fv)[0][1])
-
-    st.session_state["results"] = {"prob": prob, "elev": elev,
-                                    "area": area, "fv": fv.values.tolist()}
-    ph.empty()
-    st.rerun()
-
-# ══════════════════════════════════════════════════════════════════════════════
-# النتائج
-# ══════════════════════════════════════════════════════════════════════════════
-if st.session_state["results"]:
-    R    = st.session_state["results"]
-    prob = R["prob"]; elev = R["elev"]; area_r = R["area"]
-    fv   = pd.DataFrame(R["fv"], columns=FEATURE_COLS)
-    v    = prob >= 0.65; cls = "ok" if v else "bad"
-    pct  = f"{prob*100:.1f}"
-
-    st.markdown('<div class="main-body">', unsafe_allow_html=True)
     st.markdown("""
-    <div class="section-label" style="margin-bottom:1.2rem;">نتائج التقييم والتفسير</div>
+    <div style="font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;
+                color:#1A1208;display:flex;align-items:center;gap:8px;margin-bottom:0.8rem;">
+      <span style="display:inline-block;width:4px;height:16px;background:#B91C1C;border-radius:2px;"></span>
+      نسبة الملاءمة والتفسير
+    </div>
     """, unsafe_allow_html=True)
 
-    col_r, col_x = st.columns([1, 1.4], gap="large")
-
-    with col_r:
-        vt = "الموقع ملائم للاستثمار" if v else "الموقع غير ملائم"
-        st.markdown(f"""
-        <div class="res-hero">
-          <div class="res-verdict {cls}">{'✓' if v else '✕'}  {vt}</div>
-          <div class="res-num {cls}">{pct}<span style="font-size:2.5rem;">%</span></div>
-          <p class="res-caption">نسبة الملاءمة التجارية المتوقعة</p>
-          <div class="res-row">
-            <div><span class="res-item-l">العتبة</span><span class="res-item-v">65%</span></div>
-            <div><span class="res-item-l">الارتفاع</span><span class="res-item-v">{elev:,.0f} م</span></div>
-            <div><span class="res-item-l">المساحة</span><span class="res-item-v">{area_r} م²</span></div>
-          </div>
+    if not has_res:
+        # حالة الانتظار
+        st.markdown("""
+        <div style="background:white;border:1px solid #CBD5E1;border-radius:12px;
+                    padding:2.5rem 1.5rem;text-align:center;min-height:300px;
+                    display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <div style="width:60px;height:60px;background:#FEF2F2;border-radius:50%;
+                      display:flex;align-items:center;justify-content:center;
+                      font-size:1.6rem;margin:0 auto 1rem;">◎</div>
+          <p style="font-family:'Cairo',sans-serif;font-size:15px;font-weight:700;
+                    color:#1A1208;margin:0 0 0.5rem;">في انتظار التحليل</p>
+          <p style="font-size:12px;color:#64748B;margin:0;line-height:1.8;font-family:'Cairo',sans-serif;">
+            ① حدد الموقع على الخريطة<br>
+            ② أدخل بيانات المشروع في الشريط الجانبي<br>
+            ③ اضغط <b>تحليل الموقع</b>
+          </p>
         </div>
         """, unsafe_allow_html=True)
 
+    else:
+        prob   = R["prob"]
+        elev   = R["elev"]
+        area_r = R["area"]
+        fv     = pd.DataFrame(R["fv"], columns=FEATURE_COLS)
+        v      = prob >= 0.65
+        cls    = "ok" if v else "bad"
+        pct    = str(int(prob * 100))
+
+        # ── مقياس النسبة ────────────────────────────────────────────────────
+        vt     = "الموقع ملائم للاستثمار" if v else "الموقع غير ملائم"
+        vc     = "#059669" if v else "#B91C1C"
+        vbg    = "#ECFDF5" if v else "#FEF2F2"
+
+        st.markdown(
+            "<div style='background:" + ("linear-gradient(135deg,#071626,#0D2240)" ) +
+            ";border-radius:12px;padding:1.5rem;margin-bottom:0.8rem;'>"
+            "<div style='display:inline-block;padding:4px 12px;border-radius:4px;font-size:12px;"
+            "font-weight:700;font-family:Cairo,sans-serif;margin-bottom:0.7rem;"
+            "background:rgba(" + ("5,150,105" if v else "185,28,28") + ",0.2);"
+            "border:1px solid rgba(" + ("52,211,153" if v else "248,113,113") + ",0.4);"
+            "color:" + ("#6EE7B7" if v else "#FCA5A5") + ";'>"
+            + ("✓" if v else "✕") + "  " + vt +
+            "</div>"
+            "<div style='font-family:Cairo,sans-serif;font-size:4rem;font-weight:900;"
+            "line-height:1;color:" + ("#6EE7B7" if v else "#FCA5A5") + ";'>"
+            + pct + "<span style='font-size:2rem;'>%</span></div>"
+            "<p style='color:rgba(255,255,255,0.4);font-size:12px;margin:3px 0 1rem;"
+            "font-family:Cairo,sans-serif;'>نسبة الملاءمة التجارية المتوقعة</p>"
+            "<div style='display:flex;gap:1.5rem;padding-top:0.8rem;"
+            "border-top:1px solid rgba(255,255,255,0.08);'>"
+            "<div><span style='font-size:10px;color:rgba(255,255,255,0.3);display:block;'>العتبة</span>"
+            "<span style='font-family:IBM Plex Mono,monospace;color:white;font-size:1rem;font-weight:600;'>65%</span></div>"
+            "<div><span style='font-size:10px;color:rgba(255,255,255,0.3);display:block;'>الارتفاع</span>"
+            "<span style='font-family:IBM Plex Mono,monospace;color:white;font-size:1rem;font-weight:600;'>" + str(int(elev)) + "م</span></div>"
+            "<div><span style='font-size:10px;color:rgba(255,255,255,0.3);display:block;'>المساحة</span>"
+            "<span style='font-family:IBM Plex Mono,monospace;color:white;font-size:1rem;font-weight:600;'>" + str(area_r) + "م²</span></div>"
+            "</div></div>",
+            unsafe_allow_html=True)
+
+        # ── Gauge ────────────────────────────────────────────────────────────
         fig = go.Figure(go.Indicator(
             mode="gauge+number",
             value=round(prob*100, 1),
-            number={"suffix":"%","font":{"size":34,"family":"IBM Plex Mono",
-                    "color":"#059669" if v else "#B91C1C"}},
-            gauge={"axis":{"range":[0,100],"tickfont":{"family":"IBM Plex Mono","size":9,"color":"#94A3B8"}},
+            number={"suffix":"%","font":{"size":30,"family":"IBM Plex Mono",
+                    "color": "#059669" if v else "#B91C1C"}},
+            gauge={"axis":{"range":[0,100],"tickfont":{"size":9,"color":"#94A3B8"}},
                    "bar":{"color":"#059669" if v else "#B91C1C","thickness":0.28},
                    "bgcolor":"rgba(0,0,0,0)","borderwidth":0,
                    "steps":[{"range":[0,40],"color":"#FEF2F2"},
                              {"range":[40,65],"color":"#FFFBEB"},
                              {"range":[65,100],"color":"#ECFDF5"}],
-                   "threshold":{"line":{"color":"#1A1208","width":3},"thickness":0.8,"value":65}},
-            title={"text":"مؤشر الملاءمة","font":{"size":12,"color":"#6B6355","family":"Cairo"}},
+                   "threshold":{"line":{"color":"#1A1208","width":3},
+                                "thickness":0.8,"value":65}},
+            title={"text":"مؤشر الملاءمة","font":{"size":11,"color":"#64748B"}},
         ))
-        fig.update_layout(height=200, paper_bgcolor="rgba(0,0,0,0)",
-                          margin=dict(t=45,b=0,l=10,r=10))
+        fig.update_layout(height=180, paper_bgcolor="rgba(0,0,0,0)",
+                          margin=dict(t=40,b=0,l=10,r=10))
         st.plotly_chart(fig, use_container_width=True)
 
-    with col_x:
+        # ── تفسير النموذج اللغوي ─────────────────────────────────────────────
         shap_data, shap_ok, bias_v = real_shap(model, fv)
         if shap_ok:
-            import math
-            try: bp = 1/(1+math.exp(-bias_v))*100
-            except: bp = 50.0
+            intro, pos_reasons, neg_reasons = investor_explanation(
+                prob, elev, area_r, R.get("cat", ""), shap_data)
 
-            st.markdown(f"""
-            <div class="xai-card">
-              <p class="xai-head-title">التفسير بالذكاء الاصطناعي — GeoSHAP</p>
-              <p class="xai-head-sub">قيم SHAP محسوبة من نموذج CatBoost · القاعدة الأساسية: <b style="font-family:'IBM Plex Mono',monospace;">{bp:.1f}%</b> · أبرز 5 عوامل مرتبة بحسب الأثر</p>
-            """, unsafe_allow_html=True)
+            with st.spinner("النموذج اللغوي يكتب التفسير…"):
+                llm_text = llm_explain(prob, elev, area_r,
+                                       R.get("cat",""), pos_reasons, neg_reasons, v)
 
-            BM = {"pos":"إيجابي ▲","neg":"سلبي ▼","neu":"محايد "}
-            for nm, cls_b, val, bar, sv in shap_data:
-                st.markdown(f"""
-                <div class="xai-row">
-                  <div class="xai-rh">
-                    <span class="xai-fname">{nm}</span>
-                    <span class="xai-fval">{sv}</span>
-                    <span class="xai-badge {cls_b}">{BM[cls_b]}</span>
-                  </div>
-                  <div class="xai-track"><div class="xai-fill {cls_b}" style="width:{bar}%;"></div></div>
-                </div>
-                """, unsafe_allow_html=True)
-            st.markdown("</div>", unsafe_allow_html=True)
-        else:
-            st.info("تعذّر حساب SHAP — تأكد من توافق إصدار CatBoost.")
+            bc  = "#B91C1C" if not v else "#059669"
+            bgc = "#FEF2F2" if not v else "#F0FDF4"
 
-    st.markdown(f"""
-    <div class="stat-grid">
-      <div class="stat-c"><span class="stat-v">{elev:,.0f}</span><span class="stat-l">الارتفاع (م)</span></div>
-      <div class="stat-c"><span class="stat-v">32</span><span class="stat-l">منشأة في 500م</span></div>
-      <div class="stat-c"><span class="stat-v">5</span><span class="stat-l">منافس مباشر</span></div>
-      <div class="stat-c"><span class="stat-v">65%</span><span class="stat-l">معدل نجاح الحي</span></div>
-    </div>
-    """, unsafe_allow_html=True)
+            st.markdown(
+                "<div style='background:white;border:1px solid #CBD5E1;border-radius:12px;"
+                "padding:1.2rem;margin-top:0.2rem;'>"
+                "<p style='font-family:Cairo,sans-serif;font-size:13px;font-weight:700;"
+                "color:#1A1208;margin:0 0 0.7rem;'>تفسير النتيجة للمستثمر</p>"
+                "<div style='background:" + bgc + ";border-right:4px solid " + bc + ";"
+                "border-radius:8px;padding:0.9rem 1rem;font-family:Cairo,sans-serif;"
+                "font-size:14px;line-height:2;color:#1A1208;'>"
+                + llm_text +
+                "</div></div>",
+                unsafe_allow_html=True)
 
-    if st.button("إعادة التقييم"):
-        st.session_state["results"] = None
-        st.rerun()
+        if st.button("إعادة التقييم"):
+            st.session_state["results"] = None
+            st.rerun()
 
-    st.markdown("</div>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
 # Footer
 st.markdown("""
