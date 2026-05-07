@@ -179,7 +179,7 @@ CITIES = {
 }
 
 TILES = {
-    "خريطة الشوارع":    ("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", "© OpenStreetMap", None),
+    "خريطة المواقع":    ("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", "© OpenStreetMap", None),
     "صور جوية":         ("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", "Esri",
                           "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"),
     "خريطة حضرية":      ("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", "© CARTO", None),
@@ -434,7 +434,7 @@ def ss(k, v):
     if k not in st.session_state: st.session_state[k] = v
 
 ss("lat", 18.2200); ss("lng", 42.5100)
-ss("results", None); ss("_lc", None); ss("tile", "خريطة الشوارع")
+ss("results", None); ss("_lc", None); ss("tile", "خريطة المواقع")
 
 lat = st.session_state["lat"]
 lng = st.session_state["lng"]
@@ -512,15 +512,27 @@ st.markdown(
 )
 
 st.markdown(
-    "<div style='background:linear-gradient(135deg,#071626,#0D2240);padding:2rem 2rem 1.8rem;'>"
-    "<div style='display:inline-block;background:rgba(185,28,28,0.2);border:1px solid rgba(185,28,28,0.4);"
-    "color:rgba(255,255,255,0.7);font-size:10px;font-weight:700;letter-spacing:2px;"
-    "padding:4px 12px;border-radius:4px;margin-bottom:1rem;'>GEOXAI · SITE INTELLIGENCE · ASEER</div>"
-    "<div style='font-size:2.6rem;font-weight:900;color:white;margin:0 0 0.3rem;line-height:1.2;'>"
-    "جدوى <span style='color:rgba(255,255,255,0.32);font-weight:400;font-size:1.8rem;'>— مرشد الاستثمار التجاري</span>"
+    "<div style='"
+    "background-image:linear-gradient(135deg,rgba(7,22,38,0.82) 0%,rgba(13,34,64,0.75) 100%),"
+    "url('https://www.image2url.com/r2/default/images/1778178822503-d84153de-2dca-4f74-997d-627835b26bed.png');"
+    "background-size:cover;background-position:center;"
+    "padding:2.5rem 2rem 2rem;direction:rtl;text-align:right;'>"
+    "<div style='display:inline-block;background:rgba(185,28,28,0.2);"
+    "border:1px solid rgba(185,28,28,0.4);"
+    "color:rgba(255,255,255,0.8);font-size:10px;font-weight:700;letter-spacing:2px;"
+    "padding:4px 14px;border-radius:4px;margin-bottom:1.2rem;"
+    "font-family:Cairo,sans-serif;'>"
+    "GEOXAI · SITE INTELLIGENCE · ASEER</div>"
+    "<div style='font-size:2.8rem;font-weight:900;color:white;"
+    "margin:0 0 0.3rem;line-height:1.2;font-family:Cairo,sans-serif;"
+    "text-align:right;direction:rtl;'>"
+    "جدوى "
+    "<span style='color:rgba(255,255,255,0.38);font-weight:400;font-size:1.9rem;"
+    "font-family:Cairo,sans-serif;'>— مرشد الاستثمار التجاري</span>"
     "</div>"
-    "<div style='width:48px;height:3px;background:#B91C1C;margin:0.6rem 0 1rem;'></div>"
-    "<div style='color:rgba(255,255,255,0.45);font-size:0.88rem;margin:0 0 1.5rem;'>"
+    "<div style='width:48px;height:3px;background:#B91C1C;margin:0.7rem 0 1rem;margin-right:0;'></div>"
+    "<div style='color:rgba(255,255,255,0.55);font-size:0.9rem;margin:0 0 0.5rem;"
+    "font-family:Cairo,sans-serif;text-align:right;'>"
     "منصة تحليلية للتنبؤ باستدامة المشاريع التجارية في أبها وخميس مشيط — منطقة عسير"
     "</div>"
     "</div>",
