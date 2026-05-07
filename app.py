@@ -58,22 +58,24 @@ label, .stSelectbox label, .stSlider label, .stRadio label,
 }
 [data-testid="stSidebar"] [data-baseweb="select"] * { color: white !important; }
 
-/* ── حقل المساحة: يعمل في كل الاتجاهات ── */
+/* ── حقل المساحة: خلفية بيضاء مع نص أسود لوضوح القراءة ── */
 [data-testid="stNumberInput"] { direction: ltr !important; }
 [data-testid="stNumberInput"] > div { direction: ltr !important; }
 [data-testid="stNumberInput"] input {
     direction: ltr !important; text-align: right !important;
     font-family: 'IBM Plex Mono', monospace !important;
-    background: rgba(255,255,255,0.08) !important;
-    border: 1px solid rgba(255,255,255,0.15) !important;
-    border-radius: 8px !important; color: white !important;
+    background: #FFFFFF !important;
+    border: 1.5px solid rgba(255,255,255,0.3) !important;
+    border-radius: 8px !important;
+    color: #0F172A !important;
+    font-size: 15px !important; font-weight: 600 !important;
 }
 [data-testid="stSidebar"] button[data-testid="stNumberInputStepUp"],
 [data-testid="stSidebar"] button[data-testid="stNumberInputStepDown"] {
-    background: rgba(255,255,255,0.1) !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-    color: white !important; border-radius: 6px !important;
-    font-size: 14px !important;
+    background: white !important;
+    border: 1px solid rgba(255,255,255,0.3) !important;
+    color: #B91C1C !important; border-radius: 6px !important;
+    font-size: 16px !important; font-weight: 700 !important;
 }
 
 /* ── Slider ── */
@@ -298,32 +300,68 @@ def compute_features(lat, lng, area, cat_te, brand, elev):
         "نوع_المنشأة_TE": 0.70, "فئة_النشاط_TE": cat_te,
     }
 
-def llm_explain(prob, elev, area_v, category, pos_r, neg_r, verdict):
-    """يولد تفسيرا نصيا باستخدام Claude API او نصا قالبيا عند غيابه."""
+def llm_explain(prob, elev, area_v, category, pos_r, neg_r, verdict, cv=None):
+    """
+    يولد تفسيرا نصيا غنيا بالمتغيرات الفعلية: المنافسين، الكثافة،
+    معدل الاغلاق، نوع الشارع — مستنداً لقيم SHAP الحقيقية.
+    """
     pct        = str(int(prob * 100))
     verdict_ar = "ملائم" if verdict else "غير ملائم"
     opp_ar     = "واعدة" if verdict else "محدودة"
-    pos_txt    = "; ".join(pos_r) if pos_r else "لا توجد"
-    neg_txt    = "; ".join(neg_r) if neg_r else "لا توجد"
+    cv = cv or {}
 
     def template():
+        # تفسير مفصل يذكر المتغيرات الفعلية
+        road = cv.get("road_name", "طريق مجمع")
+        comp = cv.get("competitors_n", 5)
+        hood = cv.get("neighborhood_rate", 65)
+        clos = cv.get("closure_rate_pct", 28)
+        dens = cv.get("commercial_n", 32)
+        elev_v = cv.get("elev", elev)
+        dist_a = cv.get("dist_arterial_m", 850)
+
         intro = (
-            "يشير تحليل النموذج إلى ان هذا الموقع يمتلك فرصة استثمارية " + opp_ar +
-            " لنشاط " + category + "، اذ حصل على نسبة ملاءمة " + pct +
-            "% وفق قاعدة بيانات تضم اكثر من 22000 رخصة تجارية في منطقة عسير."
+            "بناء على تحليل نموذج الذكاء الاصطناعي لاكثر من 22000 رخصة تجارية في عسير، "
+            "حصل هذا الموقع على نسبة ملاءمة " + pct + "% لنشاط " + category + ". "
         )
-        body = ""
-        if pos_r:
-            body += " ومما يدعم هذا الموقع ان " + pos_r[0].lower()
-            if len(pos_r) > 1:
-                body += "، فضلا عن ان " + pos_r[1].lower()
-            body += "."
-        if neg_r:
-            body += " غير ان ثمة اعتبارات جديرة بالانتباه؛ اذ " + neg_r[0].lower()
-            if len(neg_r) > 1:
-                body += "، كما يلاحظ ان " + neg_r[1].lower()
-            body += ". ينصح باخذ هذه العوامل بعين الاعتبار قبل اتخاذ القرار النهائي."
-        return intro + body
+
+        factors = ""
+        # نوع الشارع
+        if cv.get("road_rank", 6) >= 6:
+            factors += "الموقع يطل على " + road + " مما يضمن تدفقا يوميا جيدا من الزبائن. "
+        else:
+            factors += "الموقع على " + road + " ذي حركة مرور محدودة مما قد يؤثر على عدد الزبائن. "
+
+        # المنافسون
+        if comp <= 3:
+            factors += "لا يوجد سوى " + str(comp) + " منافسين مباشرين في نطاق 500م مما يمنح المشروع فرصة جيدة للاستحواذ. "
+        elif comp <= 7:
+            factors += "يوجد " + str(comp) + " منافسين مباشرين في نطاق 500م، منافسة معتدلة تشير الى وجود طلب فعلي على هذا النشاط. "
+        else:
+            factors += "المنافسة عالية مع " + str(comp) + " منافس مباشر في نطاق 500م. "
+
+        # الكثافة التجارية
+        if dens >= 25:
+            factors += "الكثافة التجارية في المنطقة " + str(dens) + " منشأة تجارية تعكس منطقة حيوية تجذب الزبائن. "
+        else:
+            factors += "الكثافة التجارية في المنطقة منخفضة نسبيا بـ" + str(dens) + " منشأة في 500م. "
+
+        # معدل الإغلاق
+        if clos <= 30:
+            factors += "معدل الاغلاق لهذا النشاط في المنطقة " + str(clos) + "% وهو منخفض، مؤشر جيد على الاستدامة. "
+        else:
+            factors += "معدل الاغلاق " + str(clos) + "% لهذا النشاط في المنطقة يستدعي الحذر وتحليل الاسباب. "
+
+        # معدل الحي
+        if hood >= 60:
+            factors += "معدل نجاح المحلات في هذا الحي " + str(int(hood)) + "% وهو مرتفع مما يعكس بيئة تجارية صحية."
+        else:
+            factors += "معدل نجاح المحلات في الحي " + str(int(hood)) + "% وهو متوسط."
+
+        if not verdict:
+            factors += " ينصح بمراجعة هذه العوامل وإعادة دراسة البدائل قبل الاستثمار."
+
+        return intro + factors
 
     try:
         import anthropic as _ant
@@ -332,28 +370,39 @@ def llm_explain(prob, elev, area_v, category, pos_r, neg_r, verdict):
             return template()
 
         client = _ant.Anthropic(api_key=key)
-        prompt_lines = [
-            "انت مستشار استثماري متخصص في المشاريع التجارية بمنطقة عسير السعودية.",
-            "اكتب فقرة واحدة متدفقة باللغة العربية الفصحى البسيطة تشرح للمستثمر العادي",
-            "سبب حصول موقعه على نسبة الملاءمة هذه.",
-            "",
-            "البيانات:",
-            "- نسبة الملاءمة: " + pct + "%",
-            "- الحكم: " + verdict_ar,
+        cv_lines = [
             "- النشاط التجاري: " + category,
-            "- الارتفاع: " + str(int(elev)) + "م فوق سطح البحر",
-            "- المساحة: " + str(area_v) + "م مربع",
-            "- نقاط القوة: " + pos_txt,
-            "- التحديات: " + neg_txt,
-            "",
-            "التعليمات: فقرة واحدة فقط. خاطب المستثمر مباشرة.",
-            "لا تذكر ارقاما تقنية او مصطلحات برمجية.",
-            "اسلوب مستشار خبير دافئ ومهني. لا تتجاوز 120 كلمة.",
+            "- نسبة الملاءمة: " + pct + "% (" + verdict_ar + ")",
+            "- نوع الشارع المجاور: " + cv.get("road_name","طريق مجمع") + " (رتبة " + str(cv.get("road_rank",6)) + " من 9)",
+            "- عدد المنافسين المباشرين في 500م: " + str(cv.get("competitors_n",5)) + " منافس",
+            "- متوسط عمر المنافسين: " + str(cv.get("competitor_age_d",720)) + " يوم",
+            "- الكثافة التجارية في 500م: " + str(cv.get("commercial_n",32)) + " منشأة",
+            "- معدل نجاح المحلات في الحي: " + str(int(cv.get("neighborhood_rate",65))) + "%",
+            "- معدل الاغلاق لهذا النشاط في المنطقة: " + str(cv.get("closure_rate_pct",28)) + "%",
+            "- الارتفاع الجغرافي: " + str(int(cv.get("elev",elev))) + "م فوق سطح البحر",
+            "- مساحة المحل: " + str(area_v) + "م مربع",
+            "- انتماء لعلامة تجارية: " + ("نعم" if cv.get("brand",0) else "لا"),
         ]
-        prompt = "\n".join(prompt_lines)
+        pos_txt = "; ".join(pos_r[:3]) if pos_r else "لا يوجد"
+        neg_txt = "; ".join(neg_r[:2]) if neg_r else "لا يوجد"
+
+        prompt = (
+            "انت مستشار استثماري متخصص في المشاريع التجارية بمنطقة عسير السعودية.\n"
+            "اكتب فقرتين قصيرتين باللغة العربية الفصحى البسيطة تشرحان للمستثمر\n"
+            "لماذا حصل موقعه على هذه النسبة، مع ذكر الارقام الفعلية التالية:\n\n"
+            + "\n".join(cv_lines) + "\n\n"
+            "ابرز عوامل النجاح: " + pos_txt + "\n"
+            "التحديات: " + neg_txt + "\n\n"
+            "التعليمات:\n"
+            "- اذكر تحديدا: عدد المنافسين، نوع الشارع، معدل الاغلاق، ومعدل نجاح الحي\n"
+            "- استخدم الارقام المذكورة اعلاه في التفسير\n"
+            "- خاطب المستثمر مباشرة بصيغة مفيدة\n"
+            "- لا تذكر مصطلحات تقنية مثل SHAP او CatBoost\n"
+            "- فقرتان فقط، اسلوب مستشار خبير دافئ، لا تتجاوز 150 كلمة"
+        )
         msg = client.messages.create(
             model="claude-sonnet-4-20250514",
-            max_tokens=400,
+            max_tokens=500,
             messages=[{"role": "user", "content": prompt}]
         )
         return msg.content[0].text.strip()
@@ -707,21 +756,40 @@ with col_res:
             intro, pos_reasons, neg_reasons = investor_explanation(
                 prob, elev, area_r, R.get("cat", ""), shap_data)
 
+            cv = R.get("cv", {})
             with st.spinner("النموذج اللغوي يكتب التفسير…"):
                 llm_text = llm_explain(prob, elev, area_r,
-                                       R.get("cat",""), pos_reasons, neg_reasons, v)
+                                       R.get("cat",""), pos_reasons, neg_reasons, v, cv)
 
             bc  = "#B91C1C" if not v else "#059669"
             bgc = "#FEF2F2" if not v else "#F0FDF4"
 
+            # عرض المتغيرات المحسوبة
+            if cv:
+                st.markdown(
+                    "<div style='background:#F8FAFC;border:1px solid #CBD5E1;"
+                    "border-radius:8px;padding:0.8rem 1rem;margin-top:0.3rem;direction:rtl;'>"
+                    "<p style='font-size:11px;font-weight:700;color:#64748B;margin:0 0 6px;"
+                    "letter-spacing:1px;'>المتغيرات المحسوبة تلقائياً</p>"
+                    "<div style='display:grid;grid-template-columns:repeat(2,1fr);gap:4px 12px;'>"
+                    "<span style='font-size:12px;color:#0F172A;'>المنافسون: <b>" + str(cv.get("competitors_n","—")) + "</b> في 500م</span>"
+                    "<span style='font-size:12px;color:#0F172A;'>نوع الشارع: <b>" + str(cv.get("road_name","—")) + "</b></span>"
+                    "<span style='font-size:12px;color:#0F172A;'>معدل الإغلاق: <b>" + str(cv.get("closure_rate_pct","—")) + "%</b></span>"
+                    "<span style='font-size:12px;color:#0F172A;'>معدل نجاح الحي: <b>" + str(int(cv.get("neighborhood_rate",0))) + "%</b></span>"
+                    "<span style='font-size:12px;color:#0F172A;'>الكثافة التجارية: <b>" + str(cv.get("commercial_n","—")) + "</b> منشأة</span>"
+                    "<span style='font-size:12px;color:#0F172A;'>الارتفاع: <b>" + str(int(cv.get("elev",0))) + "</b> م</span>"
+                    "</div></div>",
+                    unsafe_allow_html=True)
+
             st.markdown(
                 "<div style='background:white;border:1px solid #CBD5E1;border-radius:12px;"
-                "padding:1.2rem;margin-top:0.2rem;'>"
+                "padding:1.2rem;margin-top:0.5rem;'>"
                 "<p style='font-family:Cairo,sans-serif;font-size:13px;font-weight:700;"
                 "color:#1A1208;margin:0 0 0.7rem;'>تفسير النتيجة للمستثمر</p>"
                 "<div style='background:" + bgc + ";border-right:4px solid " + bc + ";"
                 "border-radius:8px;padding:0.9rem 1rem;font-family:Cairo,sans-serif;"
-                "font-size:14px;line-height:2;color:#1A1208;'>"
+                "font-size:14px;line-height:2.1;color:#1A1208;"
+                "direction:rtl;text-align:right;'>"
                 + llm_text +
                 "</div></div>",
                 unsafe_allow_html=True)
@@ -781,10 +849,34 @@ if analyze:
     fv   = fv[FEATURE_COLS]
     prob = float(model.predict_proba(fv)[0][1])
 
+    # القيم الفعلية للمتغيرات (بعد فك التحويل اللوغاريتمي)
+    computed_vals = {
+        "elev":              round(feats["الارتفاع"], 0),
+        "slope":             round(feats["الانحدار"], 1),
+        "road_rank":         int(feats["رتبة_الطريق"]),
+        "dist_road_m":       int(np.expm1(feats["المسافة_للشارع_الأقرب_لوغ"])),
+        "dist_arterial_m":   int(np.expm1(feats["المسافة_للطريق_الشرياني_لوغ"])),
+        "uvi":               round(feats["مؤشر_الحيوية_الحضرية"], 1),
+        "commercial_n":      int(np.expm1(feats["كثافة_تجارية_500م_لوغ"])),
+        "buildings_n":       int(np.expm1(feats["عدد_مباني_فعلي_500م_لوغ"])),
+        "competitors_n":     int(np.expm1(feats["عدد_منافسين_مباشرين_500م_لوغ"])),
+        "competitor_age_d":  int(np.expm1(feats["متوسط_عمر_المنافسين_يوم_لوغ"])),
+        "dist_direct_m":     int(np.expm1(feats["مسافة_أقرب_مباشر_متر_لوغ"])),
+        "neighborhood_rate": round(feats["المعدل_الجواري"] * 100, 0),
+        "closure_rate_pct":  round(np.expm1(feats["معدل_إغلاق_الفئة_لوغ"]) * 100, 1),
+        "area":              area,
+        "brand":             brand,
+    }
+    ROAD_NAMES = {9:"طريق سريع",8:"طريق رئيسي",7:"طريق شرياني",
+                  6:"طريق مجمع",5:"طريق محلي",4:"شارع معيشة",
+                  3:"شارع سكني",2:"طريق خدمة",1:"غير مصنف"}
+    computed_vals["road_name"] = ROAD_NAMES.get(computed_vals["road_rank"], "غير محدد")
+
     st.session_state["results"] = {
         "prob": prob, "elev": elev,
         "area": area, "cat": category,
         "fv":   fv.values.tolist(),
+        "cv":   computed_vals,
     }
     ph.empty()
     st.rerun()
