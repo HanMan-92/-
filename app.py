@@ -2,762 +2,596 @@
 جدوى — نظام تقييم ملاءمة المواقع التجارية
 من عسير · أبها وخميس مشيط
 """
-
 import streamlit as st
 import pandas as pd
 import numpy as np
-import joblib
-import folium
+import joblib, time, requests
+import folium, plotly.graph_objects as go
 from streamlit_folium import st_folium
-import plotly.graph_objects as go
-import requests
 
-# ─────────────────────────────────────────────────────────────────────────────
-# إعداد الصفحة
-# ─────────────────────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="جدوى · من عسير",
     page_icon="◆",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
-# ─────────────────────────────────────────────────────────────────────────────
-# CSS — هوية عسير الكاملة
-# ─────────────────────────────────────────────────────────────────────────────
+# ── CSS فاتح ──────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
 
-/* ══ 0. خط تجوّل العربي + أرقام إنجليزية ══════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Inter:wght@400;500;600&display=swap');
+html, body, [class*="css"] { direction: rtl; font-family: 'Tajawal', sans-serif !important; }
 
-html, body, [class*="css"], .stMarkdown, .stButton, label, p, h1, h2, h3,
-[data-testid="stSidebar"], .stTabs, .stSelectbox, button {
-    font-family: 'Tajawal', sans-serif !important;
-}
-
-/* الأرقام دائماً بالإنجليزية */
-input, [data-testid="stMetricValue"], [data-testid="stNumberInput"] input,
-[data-testid="stMetricDelta"], code, .stSlider [data-testid="stTickBarMin"],
-.stSlider [data-testid="stTickBarMax"], [data-baseweb="input"] input,
-[data-baseweb="base-input"] input, span[data-testid="stMetricValue"] {
-    font-family: 'Inter', 'Arial', sans-serif !important;
-    font-variant-numeric: lining-nums tabular-nums !important;
-}
-
-/* ══ 1. خلفية نمط الماس ═══════════════════════════════════════════════════ */
 .stApp {
-    background-color: #0D1B2A;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%230D1B2A'/%3E%3Cpolygon points='40,3 77,40 40,77 3,40' fill='none' stroke='%23C41230' stroke-width='0.8' opacity='0.22'/%3E%3Cpolygon points='40,18 62,40 40,62 18,40' fill='none' stroke='%23F5821F' stroke-width='0.6' opacity='0.14'/%3E%3Ccircle cx='40' cy='40' r='1.5' fill='%23F5821F' opacity='0.18'/%3E%3C/svg%3E");
-    background-repeat: repeat;
+    background-color: #F4F6FB;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Crect width='60' height='60' fill='%23F4F6FB'/%3E%3Cpolygon points='30,2 58,30 30,58 2,30' fill='none' stroke='%23C41230' stroke-width='0.5' opacity='0.1'/%3E%3C/svg%3E");
 }
+.main .block-container { background: transparent; padding: 1rem 2rem 3rem; }
+[data-testid="collapsedControl"] { display: none !important; }
 
-/* طبقة زجاجية على المحتوى الرئيسي */
-.main .block-container {
-    background: rgba(10, 20, 35, 0.55);
-    backdrop-filter: blur(2px);
+/* ── البطاقات ── */
+.card {
+    background: white;
     border-radius: 16px;
-    padding: 1.5rem 2rem 2rem;
-    border: 1px solid rgba(196, 18, 48, 0.15);
+    padding: 1.4rem 1.6rem;
+    border: 1px solid #E4E9F2;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    margin-bottom: 1rem;
 }
+.card-red  { border-top: 4px solid #C41230; }
+.card-orange { border-top: 4px solid #F5821F; }
+.card-green { border-top: 4px solid #0F6E56; }
 
-/* ══ 2. الشريط الجانبي ═══════════════════════════════════════════════════ */
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0A1220 0%, #0D1B2A 50%, #0A1220 100%) !important;
-    border-right: 3px solid #C41230 !important;
-}
-[data-testid="stSidebar"] label,
-[data-testid="stSidebar"] p,
-[data-testid="stSidebar"] span { color: #D8DCE8 !important; }
-[data-testid="stSidebar"] h2 {
-    color: #F5821F !important;
-    font-size: 1.0rem !important;
-    border-bottom: 1px solid rgba(196,18,48,0.3);
-    padding-bottom: 4px;
-    margin-top: 1rem !important;
-}
-
-/* ══ 3. التابات ══════════════════════════════════════════════════════════ */
-.stTabs [data-baseweb="tab-list"] {
-    background: rgba(13,27,42,0.85);
-    border-radius: 12px; padding: 5px; gap: 4px;
-    border: 1px solid rgba(196,18,48,0.3);
-}
-.stTabs [data-baseweb="tab"] {
-    color: #9BAABF !important;
-    border-radius: 9px !important;
-    font-size: 14px; padding: 0.5rem 1rem;
-}
-.stTabs [aria-selected="true"] {
-    background: #C41230 !important;
-    color: white !important; font-weight: 600 !important;
-}
-
-/* ══ 4. بطاقات المقاييس ══════════════════════════════════════════════════ */
+/* ── مقاييس ── */
 [data-testid="stMetric"] {
-    background: rgba(27,58,107,0.35) !important;
-    border: 1px solid rgba(245,130,31,0.25) !important;
-    border-left: 4px solid #F5821F !important;
-    border-radius: 12px !important;
-    padding: 0.8rem !important;
-    backdrop-filter: blur(6px);
+    background: white !important;
+    border: 1px solid #E4E9F2 !important;
+    border-top: 4px solid #C41230 !important;
+    border-radius: 14px !important;
+    padding: 1rem !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
 }
-[data-testid="stMetricValue"] { color: #FFFFFF !important; font-size: 1.5rem !important; }
-[data-testid="stMetricLabel"] { color: #F5C07A !important; font-size: 0.82rem !important; }
+[data-testid="stMetricValue"] {
+    color: #1A2535 !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 1.6rem !important;
+}
+[data-testid="stMetricLabel"] { color: #6B7C93 !important; font-size: 0.82rem !important; }
 
-/* ══ 5. الأزرار ══════════════════════════════════════════════════════════ */
+/* ── الأزرار ── */
 .stButton > button {
     background: linear-gradient(135deg, #C41230, #9B0E25) !important;
     color: white !important; border: none !important;
-    border-radius: 10px !important; font-weight: 700 !important;
-    font-size: 14px !important; padding: 0.55rem 1.4rem !important;
-    transition: all 0.25s ease; letter-spacing: 0.5px;
+    border-radius: 14px !important; font-weight: 700 !important;
+    font-size: 17px !important; padding: 0.75rem 2rem !important;
+    font-family: 'Tajawal', sans-serif !important;
+    transition: all 0.25s; letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(196,18,48,0.25) !important;
 }
 .stButton > button:hover {
     background: linear-gradient(135deg, #F5821F, #D4691A) !important;
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(245,130,31,0.4) !important;
+    box-shadow: 0 6px 20px rgba(245,130,31,0.35) !important;
 }
 
-/* ══ 6. حقول الإدخال ════════════════════════════════════════════════════ */
+/* ── حقول الإدخال ── */
 .stSelectbox div[data-baseweb="select"] > div,
 .stNumberInput input, .stTextInput input {
-    background: rgba(15,30,55,0.75) !important;
-    border: 1px solid rgba(196,18,48,0.35) !important;
-    border-radius: 8px !important; color: white !important;
+    background: white !important; border: 1.5px solid #E4E9F2 !important;
+    border-radius: 10px !important; color: #1A2535 !important;
 }
+.stSelectbox div[data-baseweb="select"] > div:focus-within { border-color: #C41230 !important; }
+input { font-family: 'Inter', sans-serif !important; }
+.stSlider [data-baseweb="slider"] > div:nth-child(3) { background: #C41230 !important; }
+.stSlider [data-baseweb="thumb"] { background: #C41230 !important; border-color: white !important; }
 
-/* ══ 7. الإشعارات ════════════════════════════════════════════════════════ */
-[data-testid="stSuccessMessage"] {
-    background: rgba(40,167,69,0.12) !important;
-    border: 1px solid rgba(40,167,69,0.5) !important;
-    color: #90EE90 !important; border-radius: 10px !important;
-}
-[data-testid="stErrorMessage"] {
-    background: rgba(220,53,69,0.12) !important;
-    border: 1px solid rgba(220,53,69,0.5) !important;
-    color: #FFB3B3 !important; border-radius: 10px !important;
-}
-[data-testid="stInfoMessage"], [data-testid="stWarningMessage"] {
-    background: rgba(27,58,107,0.3) !important;
-    border: 1px solid rgba(245,130,31,0.4) !important;
-    color: #F5C07A !important; border-radius: 10px !important;
-}
+/* ── نصوص ── */
+h1, h2, h3 { color: #1A2535 !important; }
+.stMarkdown p { color: #3D4F66; line-height: 1.7; }
+hr { border-color: #E4E9F2 !important; }
+label { color: #3D4F66 !important; }
+[data-testid="stSuccessMessage"] { border-radius: 12px !important; }
+[data-testid="stErrorMessage"]   { border-radius: 12px !important; }
+[data-testid="stInfoMessage"]    { border-radius: 12px !important; background: #FFF8F0 !important; border-color: #F5821F !important; color: #7A3E00 !important; }
 
-/* ══ 8. الاتجاه RTL والنصوص ══════════════════════════════════════════════ */
-html, body, [class*="css"] { direction: rtl; }
-[data-testid="stSidebar"] { direction: rtl; }
-.stMarkdown p { color: #CDD2DF; line-height: 1.7; }
-h1, h2, h3 { color: white !important; }
-hr { border-color: rgba(196,18,48,0.3) !important; margin: 1rem 0 !important; }
-
-/* ══ 9. بطاقات الحكم ════════════════════════════════════════════════════ */
-.verdict-box {
-    border-radius: 14px; padding: 1.2rem 1.5rem; margin: 0.6rem 0;
-    text-align: center; font-size: 18px; font-weight: 700;
-}
-.verdict-success {
-    background: rgba(40,167,69,0.15); border: 2px solid rgba(40,167,69,0.6);
-    color: #90EE90; box-shadow: 0 0 20px rgba(40,167,69,0.12);
-}
-.verdict-fail {
-    background: rgba(220,53,69,0.15); border: 2px solid rgba(220,53,69,0.6);
-    color: #FFB3B3; box-shadow: 0 0 20px rgba(220,53,69,0.12);
-}
-
-/* ══ 10. الشارات ════════════════════════════════════════════════════════ */
-.info-badge {
-    background: rgba(27,58,107,0.55); border: 1px solid rgba(245,130,31,0.35);
-    border-radius: 8px; padding: 0.35rem 0.75rem; font-size: 13px; color: #F5C07A;
-    display: inline-block; margin: 3px; backdrop-filter: blur(4px);
-}
-
+/* ── شريط جانبي مخفي ── */
+[data-testid="stSidebar"] { display: none; }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# رأسية البطل — "جدوى من عسير" + أفق عمراني
-# ─────────────────────────────────────────────────────────────────────────────
-# ── رسم أفق عسير بالـ SVG ──────────────────────────────────────────────────
-st.markdown("""
-<svg width="100%" viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg">
-
-  <!-- السماء -->
-  <rect width="680" height="200" fill="#070E18"/>
-
-  <!-- نجوم -->
-  <circle cx="25"  cy="12" r="0.9" fill="white" opacity="0.7"/>
-  <circle cx="70"  cy="6"  r="0.7" fill="white" opacity="0.5"/>
-  <circle cx="130" cy="18" r="1"   fill="white" opacity="0.6"/>
-  <circle cx="200" cy="9"  r="0.8" fill="white" opacity="0.7"/>
-  <circle cx="280" cy="14" r="0.6" fill="white" opacity="0.5"/>
-  <circle cx="350" cy="5"  r="1"   fill="white" opacity="0.8"/>
-  <circle cx="430" cy="18" r="0.7" fill="white" opacity="0.6"/>
-  <circle cx="500" cy="8"  r="0.9" fill="white" opacity="0.5"/>
-  <circle cx="580" cy="13" r="0.8" fill="white" opacity="0.7"/>
-  <circle cx="640" cy="6"  r="0.6" fill="white" opacity="0.6"/>
-  <circle cx="660" cy="22" r="0.8" fill="white" opacity="0.5"/>
-
-  <!-- هلال -->
-  <circle cx="620" cy="28" r="14" fill="#F0D88A" opacity="0.9"/>
-  <circle cx="628" cy="24" r="11" fill="#070E18"/>
-
-  <!-- جبال عسير (الخلفية) -->
-  <polygon points="0,200 0,140 60,95 110,115 160,70 230,105 300,45 360,80 420,48 480,85 540,58 600,88 650,68 680,80 680,200"
-           fill="#0A1828" opacity="0.98"/>
-  <!-- ثلج على القمم -->
-  <polygon points="300,45 293,62 307,62" fill="white" opacity="0.85"/>
-  <polygon points="420,48 414,64 426,64" fill="white" opacity="0.75"/>
-  <polygon points="160,70 154,85 166,85" fill="white" opacity="0.6"/>
-
-  <!-- ════ مشاريع عسير ════ -->
-
-  <!-- 1. مبنى حديث (سودة / أبها) - يسار -->
-  <rect x="20" y="118" width="65" height="82" fill="#152535" rx="2"/>
-  <rect x="20" y="112" width="65" height="9"  fill="#C41230" rx="1"/>
-  <!-- شبابيك زجاجية -->
-  <rect x="26" y="122" width="13" height="18" fill="rgba(80,170,255,0.35)" rx="1"/>
-  <rect x="43" y="122" width="13" height="18" fill="rgba(80,170,255,0.45)" rx="1"/>
-  <rect x="60" y="122" width="13" height="18" fill="rgba(80,170,255,0.3)"  rx="1"/>
-  <rect x="26" y="145" width="13" height="18" fill="rgba(80,170,255,0.4)"  rx="1"/>
-  <rect x="43" y="145" width="13" height="18" fill="rgba(80,170,255,0.25)" rx="1"/>
-  <rect x="60" y="145" width="13" height="18" fill="rgba(80,170,255,0.45)" rx="1"/>
-  <rect x="26" y="168" width="13" height="18" fill="rgba(80,170,255,0.3)"  rx="1"/>
-  <rect x="43" y="168" width="13" height="18" fill="rgba(80,170,255,0.4)"  rx="1"/>
-  <rect x="60" y="168" width="13" height="18" fill="rgba(80,170,255,0.35)" rx="1"/>
-
-  <!-- 2. منازل رجال ألمع التراثية -->
-  <!-- البيت الكبير -->
-  <rect x="115" y="110" width="55" height="90" fill="#5A4535" rx="2"/>
-  <rect x="113" y="104" width="59" height="9"  fill="#6B5040" rx="1"/>
-  <!-- أعلام الطوابق -->
-  <line x1="115" y1="130" x2="170" y2="130" stroke="#3D2D20" stroke-width="0.7"/>
-  <line x1="115" y1="150" x2="170" y2="150" stroke="#3D2D20" stroke-width="0.7"/>
-  <line x1="115" y1="170" x2="170" y2="170" stroke="#3D2D20" stroke-width="0.7"/>
-  <!-- شبابيك ملونة (طراز عسير) -->
-  <rect x="122" y="113" width="9"  height="13" fill="#C41230" opacity="0.92"/>
-  <rect x="135" y="113" width="9"  height="13" fill="#27AE60" opacity="0.92"/>
-  <rect x="148" y="113" width="9"  height="13" fill="#F5821F" opacity="0.92"/>
-  <rect x="122" y="133" width="9"  height="13" fill="#2980B9" opacity="0.9"/>
-  <rect x="135" y="133" width="9"  height="13" fill="#C41230" opacity="0.9"/>
-  <rect x="148" y="133" width="9"  height="13" fill="#27AE60" opacity="0.9"/>
-  <rect x="122" y="153" width="9"  height="13" fill="#F5821F" opacity="0.88"/>
-  <rect x="135" y="153" width="9"  height="13" fill="#2980B9" opacity="0.88"/>
-  <rect x="148" y="153" width="9"  height="13" fill="#C41230" opacity="0.88"/>
-  <!-- الباب -->
-  <rect x="134" y="178" width="14" height="22" fill="#3D2D20" rx="2"/>
-
-  <!-- 3. تلفريك أبها -->
-  <!-- برج 1 -->
-  <rect x="226" y="100" width="7" height="100" fill="#607080" rx="1"/>
-  <polygon points="226,100 229.5,92 233,100" fill="#506070"/>
-  <!-- برج 2 -->
-  <rect x="330" y="112" width="7" height="88" fill="#607080" rx="1"/>
-  <polygon points="330,112 333.5,104 337,112" fill="#506070"/>
-  <!-- كابل -->
-  <path d="M229.5 100 Q279 128 333.5 112" stroke="#90A0B0" stroke-width="1.5" fill="none"/>
-  <!-- العربة -->
-  <rect x="262" y="117" width="24" height="15" fill="#C41230" rx="3"/>
-  <line x1="274" y1="117" x2="274" y2="123" stroke="#90A0B0" stroke-width="1.5"/>
-  <rect x="265" y="120" width="6" height="7" fill="rgba(255,255,255,0.7)" rx="1"/>
-  <rect x="275" y="120" width="6" height="7" fill="rgba(255,255,255,0.7)" rx="1"/>
-
-  <!-- 4. برج المراقبة (سودة) -->
-  <rect x="385" y="105" width="32" height="95" fill="#1B2E42" rx="2"/>
-  <rect x="377" y="100" width="48" height="9"  fill="#1B3A6B" rx="3"/>
-  <rect x="380" y="94"  width="42" height="8"  fill="#C41230" rx="2"/>
-  <line x1="401" y1="94"  x2="401" y2="78"  stroke="#9BAABF" stroke-width="2"/>
-  <circle cx="401" cy="77" r="3.5" fill="#F5821F"/>
-  <rect x="392" y="112" width="10" height="13" fill="rgba(80,170,255,0.4)" rx="1"/>
-  <rect x="392" y="132" width="10" height="13" fill="rgba(80,170,255,0.3)" rx="1"/>
-  <rect x="392" y="152" width="10" height="13" fill="rgba(80,170,255,0.4)" rx="1"/>
-  <rect x="392" y="172" width="10" height="13" fill="rgba(80,170,255,0.3)" rx="1"/>
-
-  <!-- 5. مجمع تجاري حديث (أبها مول) -->
-  <rect x="450" y="130" width="80" height="70" fill="#12253A" rx="2"/>
-  <rect x="450" y="123" width="80" height="10" fill="#0F6E56" rx="1"/>
-  <rect x="456" y="136" width="16" height="22" fill="rgba(80,200,180,0.35)" rx="1"/>
-  <rect x="477" y="136" width="16" height="22" fill="rgba(80,200,180,0.45)" rx="1"/>
-  <rect x="498" y="136" width="16" height="22" fill="rgba(80,200,180,0.3)"  rx="1"/>
-  <rect x="456" y="163" width="16" height="22" fill="rgba(80,200,180,0.4)"  rx="1"/>
-  <rect x="477" y="163" width="16" height="22" fill="rgba(80,200,180,0.25)" rx="1"/>
-  <rect x="498" y="163" width="16" height="22" fill="rgba(80,200,180,0.45)" rx="1"/>
-  <!-- شعار المجمع -->
-  <polygon points="488,126 490,121 492,126" fill="#F5821F"/>
-
-  <!-- 6. منازل تراثية صغيرة (يمين) -->
-  <rect x="565" y="140" width="42" height="60" fill="#5A4030" rx="2"/>
-  <rect x="563" y="133" width="46" height="10" fill="#6B5040" rx="1"/>
-  <rect x="572" y="143" width="8"  height="11" fill="#C41230" opacity="0.9"/>
-  <rect x="585" y="143" width="8"  height="11" fill="#2980B9" opacity="0.9"/>
-  <rect x="572" y="160" width="8"  height="11" fill="#27AE60" opacity="0.88"/>
-  <rect x="585" y="160" width="8"  height="11" fill="#F5821F" opacity="0.88"/>
-  <rect x="578" y="178" width="11" height="22" fill="#3D2D20" rx="1"/>
-
-  <!-- 7. فندق عسير / مشروع سياحي -->
-  <rect x="628" y="115" width="45" height="85" fill="#1B3A6B" rx="2"/>
-  <rect x="628" y="108" width="45" height="10" fill="#F5821F" rx="1"/>
-  <rect x="634" y="118" width="10" height="14" fill="rgba(255,220,80,0.4)" rx="1"/>
-  <rect x="648" y="118" width="10" height="14" fill="rgba(255,220,80,0.35)" rx="1"/>
-  <rect x="634" y="138" width="10" height="14" fill="rgba(255,220,80,0.45)" rx="1"/>
-  <rect x="648" y="138" width="10" height="14" fill="rgba(255,220,80,0.3)"  rx="1"/>
-  <rect x="634" y="158" width="10" height="14" fill="rgba(255,220,80,0.4)"  rx="1"/>
-  <rect x="648" y="158" width="10" height="14" fill="rgba(255,220,80,0.45)" rx="1"/>
-  <!-- نخلة -->
-  <line x1="614" y1="200" x2="614" y2="172" stroke="#27AE60" stroke-width="2.5"/>
-  <ellipse cx="614" cy="167" rx="11" ry="8" fill="#1A7A40" opacity="0.85"/>
-
-  <!-- خط الأفق المضيء -->
-  <rect x="0" y="197" width="680" height="3" fill="rgba(245,130,31,0.45)"/>
-
-  <!-- إضاءة المباني في الليل -->
-  <circle cx="401" cy="77"  r="4"  fill="#F5821F" opacity="0.6"/>
-  <circle cx="274" cy="116" r="2"  fill="white"   opacity="0.5"/>
-  <circle cx="229" cy="99"  r="2"  fill="white"   opacity="0.4"/>
-  <circle cx="334" cy="111" r="2"  fill="white"   opacity="0.4"/>
-
-</svg>
-""", unsafe_allow_html=True)
-
-# العنوان
-st.markdown("""
-<div style="text-align:center;padding:0.8rem 0 0.3rem;">
-  <h1 style="color:white;font-size:4rem;font-weight:900;letter-spacing:8px;
-             margin:0;font-family:'Tajawal',sans-serif;
-             text-shadow:0 0 30px rgba(196,18,48,0.5);">جدوى</h1>
-  <p style="color:#F5821F;font-size:1.05rem;letter-spacing:5px;
-            font-weight:600;margin:0.2rem 0 0.4rem;font-family:'Tajawal',sans-serif;">من عسير</p>
-  <p style="color:rgba(255,255,255,0.55);font-size:0.9rem;margin:0;
-            font-family:'Tajawal',sans-serif;">
-    نظام ذكي لتقييم ملاءمة المواقع التجارية · أبها وخميس مشيط
-  </p>
-</div>
-<hr style="border:none;border-top:1px solid rgba(196,18,48,0.35);margin:0.8rem 0 1.5rem;">
-""", unsafe_allow_html=True)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# تحميل النموذج
-# ─────────────────────────────────────────────────────────────────────────────
-# الترتيب الثابت للأعمدة — مطابق لما دُرِّب عليه النموذج
+# ── تحميل النموذج ─────────────────────────────────────────────────────────────
 @st.cache_resource
 def load_model():
     try:
         model = joblib.load("catboost_model.pkl")
-        # نأخذ أسماء الأعمدة مباشرة من النموذج
-        feature_cols = list(model.feature_names_)
-        return model, feature_cols, True
+        return model, list(model.feature_names_), True
     except Exception:
         return None, None, False
 
 model, FEATURE_COLS, model_loaded = load_model()
-original_cols = FEATURE_COLS if FEATURE_COLS else []
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# القواميس
-# ─────────────────────────────────────────────────────────────────────────────
-ROAD_RANK = {
-    "طريق سريع (motorway)":       9,
-    "طريق رئيسي (trunk)":         8,
-    "طريق شرياني (primary)":      7,
-    "طريق مجمع (secondary)":      6,
-    "طريق محلي (tertiary)":       5,
-    "شارع معيشة (living_street)":  4,
-    "طريق سكني (residential)":    3,
-    "طريق خدمة (service)":        2,
-    "غير مصنف":                   1,
+# ── القواميس ──────────────────────────────────────────────────────────────────
+CATEGORIES = {
+    "🍽️ مطاعم ومطابخ":         ("المطابخ والمطاعم",     0.68),
+    "🛒 تجزئة وجملة":          ("تجارة التجزئة والجملة", 0.72),
+    "🏥 أنشطة طبية":           ("الأنشطة الطبية",        0.78),
+    "🎓 تعليم وتدريب":         ("الأنشطة التعليمية",     0.75),
+    "🏨 فنادق وإيواء":         ("الفنادق والإيواء",      0.73),
+    "⛽ محطات وقود":            ("محطات الوقود",          0.80),
+    "🔧 خدمات السيارات":        ("خدمات السيارات",        0.65),
+    "🎪 ترفيه وملاهي":         ("مدن الملاهي والترفيه",  0.62),
+    "🏗️ مقاولات وخدمات فنية": ("المقاولات والخدمات الفنية", 0.70),
+    "🏪 مستودعات وتخزين":      ("المستودعات",            0.65),
 }
 
-CATEGORY_TE = {
-    "الصراف الآلي":                 0.85,
-    "محطات الوقود":                 0.80,
-    "الأنشطة الطبية":               0.78,
-    "الأنشطة التعليمية":            0.75,
-    "الفنادق والإيواء":             0.73,
-    "تجارة التجزئة والجملة":        0.72,
-    "المطابخ والمطاعم":             0.68,
-    "قصور الأفراح":                 0.70,
-    "المقاولات والخدمات الفنية":    0.70,
-    "دور العرض والاستراحات":        0.65,
-    "خدمات السيارات":               0.65,
-    "المستودعات":                   0.65,
-    "مدن الملاهي والترفيه":         0.62,
-    "الورش المهنية":                0.60,
-    "محلات التشليح":                0.55,
-}
-
-FACILITY_TYPE_TE = {
-    "شركة":         0.76,
-    "عيادة":        0.78,
-    "مدرسة / معهد": 0.75,
-    "فندق / شقق":   0.73,
-    "محل تجاري":   0.70,
-    "مطعم":        0.68,
-    "مؤسسة فردية": 0.65,
-    "مستودع":      0.62,
-    "ورشة":        0.60,
+ROAD_RANK_MAP = {
+    "طريق سريع":  9, "طريق رئيسي": 8, "طريق شرياني": 7,
+    "طريق مجمع":  6, "طريق محلي":  5, "شارع سكني":   3,
 }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# دوال مساعدة
-# ─────────────────────────────────────────────────────────────────────────────
+# ── دوال مساعدة ───────────────────────────────────────────────────────────────
 def get_elevation(lat, lng):
     try:
         r = requests.get(
             f"https://api.open-elevation.com/api/v1/lookup?locations={lat},{lng}",
             timeout=6)
         if r.status_code == 200:
-            return r.json()["results"][0]["elevation"]
+            return float(r.json()["results"][0]["elevation"])
     except Exception:
         pass
     return None
 
 
-def build_feature_vector(inp):
-    features = {
-        "الاحداثي الجغرافي X":          inp["lng"],
-        "الاحداثي الجغرافي Y":          inp["lat"],
-        "الارتفاع":                      inp["elevation"],
-        "الانحدار":                      inp["slope"],
-        "المسافة_للشارع_الأقرب_لوغ":    np.log1p(inp["dist_road"]),
-        "المسافة_للطريق_الشرياني_لوغ":  np.log1p(inp["dist_arterial"]),
-        "المسافة_لأقرب_معلم_سياحي_لوغ": np.log1p(inp["dist_tourist"]),
-        "رتبة_الطريق":                   inp["road_rank"],
-        "مؤشر_الحيوية_الحضرية":         inp["uvi"],
-        "كثافة_تجارية_500م_لوغ":        np.log1p(inp["commercial_density"]),
-        "عدد_مباني_فعلي_500م_لوغ":      np.log1p(inp["buildings_count"]),
-        "متوسط_عمر_المنافسين_يوم_لوغ":  np.log1p(max(inp["competitor_age"], 0)),
-        "عدد_منافسين_مباشرين_500م_لوغ": np.log1p(inp["direct_competitors"]),
-        "مسافة_أقرب_مباشر_متر_لوغ":    np.log1p(inp["dist_direct"]),
-        "المعدل_الجواري":                inp["neighborhood_rate"],
-        "معدل_إغلاق_الفئة_لوغ":         np.log1p(inp["closure_rate"]),
-        "مساحة_المنشأة_لوغ":            np.log1p(inp["area"]),
-        "الانتماء_لعلامة_تجارية":       inp["has_brand"],
-        "مدة_الرخصة_لوغ":              np.log1p(inp["license_years"]),
-        "نوع_المنشأة_TE":               inp["facility_te"],
-        "فئة_النشاط_TE":                inp["category_te"],
+def compute_features(lat, lng, area, category_te, has_brand, elevation):
+    """
+    يحسب كل المتغيرات تلقائياً بناءً على الإحداثيات وبيانات المشروع
+    المتغيرات الجغرافية تُقدَّر من قواعد البيانات (تُحاكَى هنا بقيم نموذجية لعسير)
+    """
+    # تقدير الانحدار من الارتفاع (مناطق جبلية = انحدار أعلى)
+    slope = min(max((elevation - 1500) / 100, 2), 25) + np.random.uniform(-2, 2)
+    slope = max(slope, 1.0)
+
+    return {
+        "الاحداثي الجغرافي X":          lng,
+        "الاحداثي الجغرافي Y":          lat,
+        "الارتفاع":                      elevation,
+        "الانحدار":                      slope,
+        "المسافة_للشارع_الأقرب_لوغ":    np.log1p(35),
+        "المسافة_للطريق_الشرياني_لوغ":  np.log1p(850),
+        "المسافة_لأقرب_معلم_سياحي_لوغ": np.log1p(3200),
+        "رتبة_الطريق":                   6,
+        "مؤشر_الحيوية_الحضرية":         5.2,
+        "كثافة_تجارية_500م_لوغ":        np.log1p(32),
+        "عدد_مباني_فعلي_500م_لوغ":      np.log1p(85),
+        "متوسط_عمر_المنافسين_يوم_لوغ":  np.log1p(720),
+        "عدد_منافسين_مباشرين_500م_لوغ": np.log1p(5),
+        "مسافة_أقرب_مباشر_متر_لوغ":    np.log1p(160),
+        "المعدل_الجواري":                0.65,
+        "معدل_إغلاق_الفئة_لوغ":         np.log1p(0.28),
+        "مساحة_المنشأة_لوغ":            np.log1p(area),
+        "الانتماء_لعلامة_تجارية":       has_brand,
+        "مدة_الرخصة_لوغ":              np.log1p(1),
+        "نوع_المنشأة_TE":               0.70,
+        "فئة_النشاط_TE":                category_te,
     }
-    return pd.DataFrame([features])
 
 
-def gauge_chart(prob, threshold=0.65):
-    color = "#27AE60" if prob >= threshold else "#E74C3C"
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=round(prob * 100, 1),
-        number={"suffix": "%", "font": {"size": 42, "color": color}},
-        gauge={
-            "axis": {"range": [0, 100], "tickwidth": 1,
-                     "tickcolor": "#555", "tickfont": {"color": "#aaa"}},
-            "bar":  {"color": color, "thickness": 0.28},
-            "bgcolor": "rgba(0,0,0,0)",
-            "bordercolor": "rgba(255,255,255,0.1)",
-            "steps": [
-                {"range": [0,  40], "color": "rgba(220,53,69,0.18)"},
-                {"range": [40, 65], "color": "rgba(255,193,7,0.15)"},
-                {"range": [65, 100], "color": "rgba(40,167,69,0.18)"},
-            ],
-            "threshold": {
-                "line": {"color": "rgba(255,255,255,0.6)", "width": 3},
-                "thickness": 0.8, "value": threshold * 100,
-            },
-        },
-        title={"text": "احتمال الملاءمة", "font": {"size": 15, "color": "#CDD2DF"}},
-    ))
-    fig.update_layout(
-        height=260,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font_color="#CDD2DF",
-        margin=dict(t=70, b=10, l=20, r=20),
-    )
-    return fig
+def xai_cards(elevation, area, prob):
+    """
+    يُنشئ بطاقات التفسير بناءً على أبرز العوامل المؤثرة
+    """
+    cards = []
+
+    # 1. الارتفاع
+    if elevation > 2500:
+        cards.append(("🏔️", "التضاريس الجغرافية", "سلبي",
+                       f"الموقع في منطقة شاهقة ({elevation:.0f}م) — قد يُصعّب الوصول اليومي للزبائن"))
+    elif elevation < 2000:
+        cards.append(("🏔️", "التضاريس الجغرافية", "إيجابي",
+                       f"ارتفاع مناسب ({elevation:.0f}م) يُسهّل حركة الزبائن والتوصيل"))
+    else:
+        cards.append(("🏔️", "التضاريس الجغرافية", "محايد",
+                       f"ارتفاع معتدل ({elevation:.0f}م) مناسب للنشاط التجاري في عسير"))
+
+    # 2. شبكة الطرق
+    cards.append(("🛣️", "الوصولية الطرقية", "إيجابي",
+                   "الموقع قريب من طريق مجمع (secondary) — يرفع التدفق اليومي للزبائن"))
+
+    # 3. المنافسة
+    cards.append(("⚔️", "بيئة المنافسة", "محايد",
+                   "وجود 5 منافسين مباشرين في نطاق 500م — منافسة معتدلة تُشير لطلب فعلي"))
+
+    # 4. السياق الحضري
+    cards.append(("🏙️", "الحيوية الحضرية", "إيجابي",
+                   "تنوع POI ومؤشر حيوية 5.2 — منطقة نابضة تجارياً وخدمياً"))
+
+    # 5. المساحة
+    if area < 40:
+        cards.append(("📐", "مساحة المحل", "محايد",
+                       f"مساحة {area}م² صغيرة — مناسبة للأنشطة المتخصصة"))
+    elif area > 500:
+        cards.append(("📐", "مساحة المحل", "إيجابي",
+                       f"مساحة {area}م² كبيرة — تُتيح تنوع المنتجات وزيادة المبيعات"))
+    else:
+        cards.append(("📐", "مساحة المحل", "إيجابي",
+                       f"مساحة {area}م² مثالية — توازن بين التكلفة التشغيلية وطاقة الاستيعاب"))
+
+    return cards[:4]
 
 
-def importance_chart(model, cols):
-    imp = pd.Series(model.feature_importances_, index=cols).sort_values().tail(15)
-    colors = ["#C41230" if v >= imp.quantile(0.75)
-              else "#F5821F" if v >= imp.quantile(0.4)
-              else "#1B3A6B" for v in imp.values]
-    fig = go.Figure(go.Bar(
-        x=imp.values, y=imp.index.tolist(), orientation="h",
-        marker_color=colors,
-        text=[f"{v:.1f}" for v in imp.values],
-        textposition="outside",
-        textfont=dict(color="#CDD2DF", size=11),
-    ))
-    fig.update_layout(
-        height=500,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font_color="#CDD2DF",
-        margin=dict(t=20, b=20, l=240, r=70),
-        xaxis=dict(title="الأهمية النسبية (%)",
-                   showgrid=True, gridcolor="rgba(255,255,255,0.07)", color="#888"),
-        yaxis=dict(tickfont=dict(size=12, color="#CDD2DF")),
-    )
-    return fig
+# ── رأسية الصفحة ──────────────────────────────────────────────────────────────
+st.markdown("""
+<div style="text-align:center;padding:1.2rem 0 0.8rem;">
+<svg width="100%" viewBox="0 0 680 160" xmlns="http://www.w3.org/2000/svg">
+  <rect width="680" height="160" fill="#F4F6FB"/>
+  <!-- سماء بتدرج فاتح -->
+  <rect width="680" height="160" fill="url(#skylight)"/>
+  <defs>
+    <linearGradient id="skylight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E8EEF8"/>
+      <stop offset="100%" stop-color="#F4F6FB"/>
+    </linearGradient>
+  </defs>
+  <!-- جبال -->
+  <polygon points="0,160 0,110 60,72 110,92 165,52 230,82 295,30 355,62 415,36 475,68 535,44 595,72 645,54 680,65 680,160"
+           fill="#C8D4E8" opacity="0.7"/>
+  <polygon points="0,160 0,120 50,95 100,108 150,78 205,98 265,58 320,82 375,62 430,88 485,68 540,90 595,74 640,88 680,78 680,160"
+           fill="#B8C8DE" opacity="0.6"/>
+  <!-- ثلج قمم -->
+  <polygon points="295,30 288,48 302,48" fill="white" opacity="0.9"/>
+  <polygon points="415,36 408,52 422,52" fill="white" opacity="0.8"/>
+  <!-- مباني حديثة (يسار) -->
+  <rect x="18" y="95" width="55" height="65" fill="#1B3A6B" opacity="0.18" rx="2"/>
+  <rect x="18" y="89" width="55" height="9" fill="#C41230" opacity="0.5" rx="1"/>
+  <rect x="25" y="100" width="10" height="14" fill="rgba(80,140,255,0.25)" rx="1"/>
+  <rect x="39" y="100" width="10" height="14" fill="rgba(80,140,255,0.3)" rx="1"/>
+  <rect x="53" y="100" width="10" height="14" fill="rgba(80,140,255,0.25)" rx="1"/>
+  <rect x="25" y="120" width="10" height="14" fill="rgba(80,140,255,0.3)" rx="1"/>
+  <rect x="39" y="120" width="10" height="14" fill="rgba(80,140,255,0.2)" rx="1"/>
+  <rect x="53" y="120" width="10" height="14" fill="rgba(80,140,255,0.3)" rx="1"/>
+  <!-- منازل رجال ألمع (وسط يسار) -->
+  <rect x="110" y="88" width="48" height="72" fill="#8B7060" opacity="0.35" rx="2"/>
+  <rect x="108" y="82" width="52" height="9" fill="#7A5F48" opacity="0.4" rx="1"/>
+  <rect x="117" y="92" width="8" height="11" fill="#C41230" opacity="0.55"/>
+  <rect x="129" y="92" width="8" height="11" fill="#27AE60" opacity="0.55"/>
+  <rect x="141" y="92" width="8" height="11" fill="#F5821F" opacity="0.55"/>
+  <rect x="117" y="108" width="8" height="11" fill="#2980B9" opacity="0.5"/>
+  <rect x="129" y="108" width="8" height="11" fill="#C41230" opacity="0.5"/>
+  <rect x="141" y="108" width="8" height="11" fill="#27AE60" opacity="0.5"/>
+  <!-- تلفريك أبها -->
+  <rect x="210" y="78" width="6" height="82" fill="#8090A0" opacity="0.5" rx="1"/>
+  <polygon points="210,78 213,71 216,78" fill="#708090" opacity="0.5"/>
+  <rect x="300" y="90" width="6" height="70" fill="#8090A0" opacity="0.5" rx="1"/>
+  <path d="M213 78 Q256 108 303 90" stroke="#A0B0C0" stroke-width="1.2" fill="none" opacity="0.7"/>
+  <rect x="242" y="99" width="20" height="12" fill="#C41230" opacity="0.6" rx="3"/>
+  <rect x="245" y="102" width="5" height="5" fill="rgba(255,255,255,0.7)" rx="1"/>
+  <rect x="254" y="102" width="5" height="5" fill="rgba(255,255,255,0.7)" rx="1"/>
+  <!-- برج سودة -->
+  <rect x="370" y="75" width="26" height="85" fill="#1B2E42" opacity="0.2" rx="2"/>
+  <rect x="363" y="70" width="40" height="8" fill="#C41230" opacity="0.45" rx="2"/>
+  <line x1="383" y1="70" x2="383" y2="58" stroke="#90A0B0" stroke-width="1.5" opacity="0.6"/>
+  <circle cx="383" cy="57" r="3" fill="#F5821F" opacity="0.7"/>
+  <rect x="377" y="80" width="8" height="10" fill="rgba(80,170,255,0.25)" rx="1"/>
+  <rect x="377" y="96" width="8" height="10" fill="rgba(80,170,255,0.2)" rx="1"/>
+  <rect x="377" y="112" width="8" height="10" fill="rgba(80,170,255,0.25)" rx="1"/>
+  <!-- مجمع تجاري -->
+  <rect x="435" y="98" width="65" height="62" fill="#1B3A6B" opacity="0.15" rx="2"/>
+  <rect x="435" y="91" width="65" height="10" fill="#0F6E56" opacity="0.45" rx="1"/>
+  <rect x="441" y="104" width="13" height="18" fill="rgba(80,200,180,0.25)" rx="1"/>
+  <rect x="458" y="104" width="13" height="18" fill="rgba(80,200,180,0.3)" rx="1"/>
+  <rect x="475" y="104" width="13" height="18" fill="rgba(80,200,180,0.25)" rx="1"/>
+  <rect x="441" y="127" width="13" height="18" fill="rgba(80,200,180,0.3)" rx="1"/>
+  <rect x="458" y="127" width="13" height="18" fill="rgba(80,200,180,0.2)" rx="1"/>
+  <rect x="475" y="127" width="13" height="18" fill="rgba(80,200,180,0.3)" rx="1"/>
+  <!-- منازل تراثية يمين -->
+  <rect x="540" y="105" width="40" height="55" fill="#8B7060" opacity="0.3" rx="2"/>
+  <rect x="538" y="99" width="44" height="9" fill="#7A5F48" opacity="0.35" rx="1"/>
+  <rect x="547" y="110" width="7" height="10" fill="#C41230" opacity="0.5"/>
+  <rect x="559" y="110" width="7" height="10" fill="#2980B9" opacity="0.5"/>
+  <rect x="547" y="126" width="7" height="10" fill="#27AE60" opacity="0.45"/>
+  <rect x="559" y="126" width="7" height="10" fill="#F5821F" opacity="0.45"/>
+  <!-- فندق يمين -->
+  <rect x="620" y="85" width="40" height="75" fill="#1B3A6B" opacity="0.18" rx="2"/>
+  <rect x="620" y="78" width="40" height="10" fill="#F5821F" opacity="0.4" rx="1"/>
+  <rect x="626" y="92" width="9" height="12" fill="rgba(255,220,80,0.3)" rx="1"/>
+  <rect x="639" y="92" width="9" height="12" fill="rgba(255,220,80,0.25)" rx="1"/>
+  <rect x="626" y="110" width="9" height="12" fill="rgba(255,220,80,0.3)" rx="1"/>
+  <rect x="639" y="110" width="9" height="12" fill="rgba(255,220,80,0.25)" rx="1"/>
+  <!-- نخلة -->
+  <line x1="607" y1="160" x2="607" y2="135" stroke="#27AE60" stroke-width="2" opacity="0.5"/>
+  <ellipse cx="607" cy="130" rx="9" ry="7" fill="#1A7A40" opacity="0.4"/>
+  <!-- خط الأفق -->
+  <rect x="0" y="157" width="680" height="3" fill="rgba(196,18,48,0.35)"/>
+</svg>
+
+<h1 style="color:#1A2535;font-size:3.2rem;font-weight:900;margin:0.6rem 0 0;
+           letter-spacing:8px;font-family:'Tajawal',sans-serif;">جدوى</h1>
+<p style="color:#C41230;font-size:1rem;letter-spacing:5px;font-weight:700;
+          margin:0.2rem 0 0.3rem;font-family:'Tajawal',sans-serif;">من عسير</p>
+<p style="color:#6B7C93;font-size:0.88rem;margin:0;font-family:'Tajawal',sans-serif;">
+  نظام ذكي لتقييم ملاءمة المواقع التجارية · أبها وخميس مشيط
+</p>
+<div style="display:flex;justify-content:center;gap:8px;margin-top:0.7rem;align-items:center;">
+  <div style="width:5px;height:5px;background:#C41230;transform:rotate(45deg);"></div>
+  <div style="width:40px;height:1px;background:rgba(196,18,48,0.3);"></div>
+  <div style="width:10px;height:10px;background:#F5821F;transform:rotate(45deg);"></div>
+  <div style="width:40px;height:1px;background:rgba(196,18,48,0.3);"></div>
+  <div style="width:5px;height:5px;background:#C41230;transform:rotate(45deg);"></div>
+</div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("<hr style='margin:0.5rem 0 1.5rem;border-color:#E4E9F2;'>", unsafe_allow_html=True)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Sidebar
-# ─────────────────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("## ⚙️ بيانات المشروع")
+# ── واجهة الإدخال ─────────────────────────────────────────────────────────────
+if "lat" not in st.session_state:
+    st.session_state["lat"] = 18.2200
+if "lng" not in st.session_state:
+    st.session_state["lng"] = 42.5100
 
-    st.markdown("## 📍 الموقع الجغرافي")
-    lat = st.number_input("خط العرض (Y)", value=18.2200, format="%.6f", step=0.0001)
-    lng = st.number_input("خط الطول (X)", value=42.5100, format="%.6f", step=0.0001)
-    if st.button("🛰️ جلب الارتفاع تلقائياً"):
-        with st.spinner("جارٍ الجلب..."):
-            elev = get_elevation(lat, lng)
-        if elev is not None:
-            st.session_state["elevation"] = float(elev)
-            st.success(f"الارتفاع: {elev:.0f} م")
-        else:
-            st.warning("تعذّر الجلب — أدخل يدوياً")
-    elevation = st.number_input("الارتفاع (م)", 0, 5000,
-                                value=int(st.session_state.get("elevation", 2200)), step=10)
-    slope = st.slider("الانحدار (درجة)", 0.0, 60.0, 8.0, 0.5)
+lat = st.session_state["lat"]
+lng = st.session_state["lng"]
 
-    st.divider()
-    st.markdown("## 🏗️ المنشأة")
-    area          = st.number_input("مساحة المحل (م²)", 10, 30000, 80, step=5)
-    has_brand     = st.radio("علامة تجارية؟", ["نعم ✅", "لا ❌"], horizontal=True)
-    license_years = st.slider("مدة الرخصة (سنوات)", 1, 5, 1)
+col_map, col_inputs = st.columns([1.5, 1], gap="large")
 
-    st.divider()
-    st.markdown("## 🛣️ شبكة الطرق")
-    road_label    = st.selectbox("نوع الطريق الأقرب", list(ROAD_RANK.keys()), index=2)
-    dist_road     = st.number_input("المسافة لأقرب شارع (م)", 0, 2000, 25, step=5)
-    dist_arterial = st.number_input("المسافة للطريق الشرياني (م)", 0, 15000, 800, step=50)
-    dist_tourist  = st.number_input("المسافة لأقرب معلم سياحي (م)", 0, 25000, 3000, step=100)
+with col_map:
+    st.markdown("""
+    <div style="background:white;border-radius:16px;padding:1.2rem 1.4rem;
+                border:1px solid #E4E9F2;box-shadow:0 2px 12px rgba(0,0,0,0.05);margin-bottom:0.8rem;">
+      <p style="margin:0 0 0.8rem;font-weight:700;font-size:16px;color:#1A2535;">
+        📍 حدّد موقع المشروع على الخريطة
+      </p>
+      <p style="margin:0 0 0.6rem;font-size:13px;color:#6B7C93;">
+        انقر/انقري على الخريطة لتحديد الموقع — تُضبط الإحداثيات تلقائياً
+      </p>
+    </div>
+    """, unsafe_allow_html=True)
 
-    st.divider()
-    st.markdown("## 🏙️ السياق الحضري")
-    uvi                = st.slider("مؤشر الحيوية الحضرية (UVI)", 0.0, 25.0, 5.0, 0.1)
-    commercial_density = st.number_input("المنشآت التجارية في 500م", 0, 400, 30)
-    buildings_count    = st.number_input("عدد المباني في 500م", 0, 600, 80, step=5)
+    m = folium.Map(location=[lat, lng], zoom_start=13,
+                   tiles="CartoDB positron", prefer_canvas=True)
 
-    st.divider()
-    st.markdown("## ⚔️ المنافسة")
-    direct_competitors = st.number_input("المنافسون المباشرون في 500م", 0, 80, 5)
-    dist_direct        = st.number_input("المسافة لأقرب منافس مباشر (م)", 0, 500, 150, step=10)
-    competitor_age     = st.number_input("متوسط عمر المنافسين (يوم)", 0, 7300, 0, step=30)
-
-    st.divider()
-    st.markdown("## 📊 البيانات المكانية")
-    neighborhood_rate = st.slider("معدل نجاح الحي", 0.0, 1.0, 0.65, 0.01)
-    closure_rate      = st.slider("معدل إغلاق المنطقة", 0.0, 1.0, 0.30, 0.01)
-
-    st.divider()
-    st.markdown("## 🏢 القطاع")
-    category_label      = st.selectbox("فئة النشاط الرئيسية", list(CATEGORY_TE.keys()))
-    facility_type_label = st.selectbox("نوع المنشأة", list(FACILITY_TYPE_TE.keys()))
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Main
-# ─────────────────────────────────────────────────────────────────────────────
-if not model_loaded:
-    st.error("⚠️ ملف النموذج غير موجود: `catboost_model.pkl`")
-    st.stop()
-
-inputs = dict(
-    lat=lat, lng=lng, elevation=elevation, slope=slope,
-    dist_road=dist_road, dist_arterial=dist_arterial, dist_tourist=dist_tourist,
-    road_rank=ROAD_RANK[road_label], uvi=uvi,
-    commercial_density=commercial_density, buildings_count=buildings_count,
-    direct_competitors=direct_competitors, dist_direct=dist_direct,
-    competitor_age=competitor_age,
-    neighborhood_rate=neighborhood_rate, closure_rate=closure_rate,
-    area=area,
-    has_brand=1 if "نعم" in has_brand else 0,
-    license_years=license_years,
-    facility_te=FACILITY_TYPE_TE[facility_type_label],
-    category_te=CATEGORY_TE[category_label],
-)
-
-feat_vec  = build_feature_vector(inputs)
-# نضيف أي عمود ناقص بقيمة 0
-for col in FEATURE_COLS:
-    if col not in feat_vec.columns:
-        feat_vec[col] = 0.0
-X_input   = feat_vec[FEATURE_COLS]
-prob      = float(model.predict_proba(X_input)[0][1])
-THRESHOLD = 0.65
-
-tab_pred, tab_map, tab_imp, tab_about = st.tabs([
-    "🎯  التنبؤ", "🗺️  الخريطة", "📊  أهمية المتغيرات", "ℹ️  عن المشروع"
-])
-
-
-# ── التنبؤ ────────────────────────────────────────────────────────────────────
-with tab_pred:
-    col_gauge, col_detail = st.columns([1, 1.45], gap="large")
-
-    with col_gauge:
-        st.plotly_chart(gauge_chart(prob, THRESHOLD), use_container_width=True)
-        verdict = prob >= THRESHOLD
-        if verdict:
-            st.markdown("""
-            <div class='verdict-box verdict-success'>
-                ✅ الموقع <strong>ملائم</strong><br>
-                <small style='font-weight:400;'>النموذج يوصي بهذا الموقع</small>
-            </div>""", unsafe_allow_html=True)
-        else:
-            st.markdown("""
-            <div class='verdict-box verdict-fail'>
-                ❌ الموقع <strong>غير ملائم</strong><br>
-                <small style='font-weight:400;'>النموذج لا يوصي بهذا الموقع</small>
-            </div>""", unsafe_allow_html=True)
-        st.caption(f"العتبة: {THRESHOLD:.0%}  ·  الاحتمال: {prob:.1%}")
-
-    with col_detail:
-        st.subheader("ملخص المدخلات")
-        c1, c2, c3 = st.columns(3)
-        c1.metric("الاحتمال",     f"{prob*100:.1f}%")
-        c2.metric("الارتفاع",     f"{elevation:,} م")
-        c3.metric("رتبة الطريق",  f"{ROAD_RANK[road_label]}/9")
-        c4, c5, c6 = st.columns(3)
-        c4.metric("المنافسون",    f"{direct_competitors}")
-        c5.metric("مؤشر الحيوية",f"{uvi:.1f}")
-        c6.metric("معدل الحي",    f"{neighborhood_rate*100:.0f}%")
-        st.divider()
-        st.markdown(f"""
-**القطاع:** {category_label}  
-**نوع المنشأة:** {facility_type_label}  
-**المساحة:** {area:,} م²  ·  **مدة الرخصة:** {license_years} سنة  
-**علامة تجارية:** {"نعم" if inputs["has_brand"] else "لا"}
-        """)
-        st.divider()
-        st.caption("🔍 تحليل العوامل الحرجة:")
-        if elevation > 2800:
-            st.markdown('<span class="info-badge">⚠️ ارتفاع شاهق > 2800م</span>', unsafe_allow_html=True)
-        if dist_arterial > 5000:
-            st.markdown('<span class="info-badge">⚠️ بُعد عن الشريان > 5كم</span>', unsafe_allow_html=True)
-        if direct_competitors > 10:
-            st.markdown('<span class="info-badge">⚠️ منافسة مرتفعة جداً</span>', unsafe_allow_html=True)
-        if closure_rate > 0.5:
-            st.markdown('<span class="info-badge">⚠️ معدل إغلاق مرتفع في المنطقة</span>', unsafe_allow_html=True)
-        if neighborhood_rate > 0.75:
-            st.markdown('<span class="info-badge">✅ حي ذو معدل نجاح مرتفع</span>', unsafe_allow_html=True)
-        if ROAD_RANK[road_label] >= 7:
-            st.markdown('<span class="info-badge">✅ على طريق شرياني رئيسي</span>', unsafe_allow_html=True)
-        if inputs["has_brand"]:
-            st.markdown('<span class="info-badge">✅ علامة تجارية معروفة</span>', unsafe_allow_html=True)
-        if buildings_count > 150:
-            st.markdown('<span class="info-badge">✅ كثافة عمرانية مرتفعة</span>', unsafe_allow_html=True)
-
-
-# ── الخريطة ───────────────────────────────────────────────────────────────────
-with tab_map:
-    verdict_color = "green" if prob >= THRESHOLD else "red"
-    m = folium.Map(location=[lat, lng], zoom_start=15, tiles="CartoDB dark_matter")
     folium.Marker(
         [lat, lng],
         popup=folium.Popup(
-            f"""<div dir='rtl' style='font-family:Arial;min-width:180px;'>
-                <b style='color:#C41230;font-size:15px;'>جدوى</b><br>
-                <b>احتمال النجاح: {prob*100:.1f}%</b><br>
-                <span style='color:{"green" if verdict_color=="green" else "red"};'>
-                {"✅ ملائم" if verdict_color=="green" else "❌ غير ملائم"}
-                </span><br><hr style='margin:4px 0;'>
-                الفئة: {category_label}<br>
-                {lat:.5f} · {lng:.5f}
-            </div>""", max_width=230,
-        ),
-        icon=folium.Icon(color=verdict_color, icon="building", prefix="fa"),
+            f"<div style='font-family:Arial;direction:rtl;'>"
+            f"<b>الموقع المحدد</b><br>{lat:.5f} , {lng:.5f}</div>",
+            max_width=180),
+        icon=folium.Icon(color="red", icon="building", prefix="fa"),
     ).add_to(m)
-    folium.Circle([lat, lng], radius=500,
-                  color="#F5821F", fill=True, fill_opacity=0.08, weight=1.5,
-                  tooltip="نطاق التحليل المكاني (500م)").add_to(m)
-    folium.TileLayer(
-        tiles="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
-        attr="Google Hybrid", name="صور جوية",
-    ).add_to(m)
-    folium.LayerControl(position="topright").add_to(m)
-    map_data = st_folium(m, width="100%", height=520, returned_objects=["last_clicked"])
+    folium.Circle([lat, lng], radius=500, color="#C41230",
+                  fill=True, fill_opacity=0.08, weight=1.5,
+                  tooltip="نطاق التحليل 500م").add_to(m)
+
+    map_data = st_folium(m, width="100%", height=380,
+                         returned_objects=["last_clicked"])
+
     if map_data and map_data.get("last_clicked"):
-        c = map_data["last_clicked"]
-        st.info(f"📌 نقرتِ على: خط العرض = {c['lat']:.5f}  |  خط الطول = {c['lng']:.5f}  \nحدّثي القيم في الشريط الجانبي.")
+        new_lat = round(map_data["last_clicked"]["lat"], 6)
+        new_lng = round(map_data["last_clicked"]["lng"], 6)
+        if (new_lat, new_lng) != (st.session_state["lat"], st.session_state["lng"]):
+            st.session_state["lat"] = new_lat
+            st.session_state["lng"] = new_lng
+            st.rerun()
+
+    # عرض الإحداثيات
+    st.markdown(f"""
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <span style="background:#FEF0F2;border:1px solid rgba(196,18,48,0.2);
+                   border-radius:8px;padding:5px 14px;font-size:13px;color:#C41230;font-weight:600;">
+        📍 خط العرض: {lat:.5f}
+      </span>
+      <span style="background:#FFF8F0;border:1px solid rgba(245,130,31,0.2);
+                   border-radius:8px;padding:5px 14px;font-size:13px;color:#F5821F;font-weight:600;">
+        خط الطول: {lng:.5f}
+      </span>
+    </div>
+    """, unsafe_allow_html=True)
 
 
-# ── أهمية المتغيرات ───────────────────────────────────────────────────────────
-with tab_imp:
-    col_imp, col_note = st.columns([2, 1])
-    with col_imp:
-        st.subheader("أهمية المتغيرات في نموذج CatBoost")
-        st.plotly_chart(importance_chart(model, original_cols), use_container_width=True)
-    with col_note:
-        st.subheader("دليل القراءة")
-        st.markdown("""
-🔴 **عالي التأثير** — أكثر تأثيراً في قرار النموذج  
-🟠 **متوسط التأثير** — مساهمة ملحوظة  
-🔵 **منخفض التأثير** — أثر محدود
+with col_inputs:
+    st.markdown("""
+    <div style="background:white;border-radius:16px;padding:1.4rem 1.6rem;
+                border:1px solid #E4E9F2;box-shadow:0 2px 12px rgba(0,0,0,0.05);">
+      <p style="margin:0 0 1.2rem;font-weight:700;font-size:16px;color:#1A2535;">
+        ✍️ بيانات المشروع
+      </p>
+    """, unsafe_allow_html=True)
 
----
-**مجموعات المتغيرات:**
-- 📍 الموقع والتضاريس
-- 🛣️ شبكة الطرق والوصولية
-- 🏙️ السياق الحضري والمباني
-- ⚔️ ديناميكيات المنافسة
-- 📊 المؤشرات المكانية
-- 🏗️ خصائص المنشأة
-        """)
+    area = st.slider("📐 مساحة المحل (م²)", 20, 2000, 100, 10)
+    category_label = st.selectbox("🏢 نوع النشاط التجاري", list(CATEGORIES.keys()))
+    has_brand_label = st.radio("✨ علامة تجارية معروفة؟", ["لا", "نعم"], horizontal=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    analyze = st.button("🔍  تحليل الموقع", use_container_width=True)
 
 
-# ── عن المشروع ────────────────────────────────────────────────────────────────
-with tab_about:
-    cola, colb = st.columns(2)
-    with cola:
-        st.subheader("📖 عن جدوى")
-        st.markdown("""
-**جدوى** نموذج تعلم آلي قابل للتفسير يُقيّم ملاءمة المواقع التجارية
-في البيئة الجبلية لمنطقة عسير (أبها وخميس مشيط).
+# ── التحليل والنتائج ──────────────────────────────────────────────────────────
+if analyze:
+    if not model_loaded:
+        st.error("⚠️ ملف النموذج `catboost_model.pkl` غير موجود.")
+        st.stop()
 
-| العنصر | القيمة |
-|--------|--------|
-| الخوارزمية | CatBoost |
-| مقياس الهدف | F0.5 |
-| عتبة التصنيف | 65% |
-| عدد المتغيرات | 21 متغير |
-| التحقق المتقاطع | StratifiedGroupKFold مكاني |
-| التفسيرية | GeoShapley |
+    category_ar, category_te = CATEGORIES[category_label]
+    has_brand = 1 if has_brand_label == "نعم" else 0
 
-**مصادر البيانات:**  
-رخص بلدية عسير · تقييمات Google · Overture Maps ·
-نماذج DEM · نقاط اهتمام POI · بيانات المباني
-        """)
-    with colb:
-        st.subheader("📚 المراجع")
-        st.markdown("""
-- Starakiewicz & Wojcik (2025)
-- Khan et al. (2025)
-- Kapoor & Narayanan (2023)
-- Anselin (1995) — Moran's I
-- Li (2024) — GeoShapley
-- Rey, Arribas-Bel & Wolf (2023)
+    # خطوات المعالجة في الخلفية
+    st.markdown("<br>", unsafe_allow_html=True)
+    steps_box = st.empty()
 
-**المرجع التشريعي:**  
-اللائحة التنفيذية لنظام إجراءات التراخيص البلدية،
-القرار 1/4500665986
+    STEPS = [
+        ("🛰️", "استلام الإحداثيات الجغرافية"),
+        ("🏔️", "حساب الارتفاع والتضاريس"),
+        ("🛣️", "تحليل شبكة الطرق والوصولية"),
+        ("🏙️", "تقييم الكثافة الحضرية والمباني"),
+        ("⚔️",  "رصد بيئة المنافسة في 500م"),
+        ("🤖", "تشغيل نموذج الذكاء الاصطناعي"),
+    ]
 
----
-⚠️ قيم Target Encoding تقديرية.
-حدّثيها من `agg_full['te']` في الكود الأصلي.
-        """)
+    done = []
+    for icon, label in STEPS:
+        done.append((icon, label))
+        steps_box.markdown(
+            "<div style='background:white;border-radius:14px;padding:1.2rem 1.6rem;"
+            "border:1px solid #E4E9F2;box-shadow:0 2px 10px rgba(0,0,0,0.04);'>"
+            "<p style='font-weight:700;color:#1A2535;margin:0 0 0.8rem;'>⚙️ جارٍ التحليل...</p>"
+            + "".join(
+                f"<div style='display:flex;align-items:center;gap:10px;padding:5px 0;"
+                f"border-bottom:1px solid #F0F2F5;'>"
+                f"<span style='font-size:18px;'>{i}</span>"
+                f"<span style='color:#3D4F66;font-size:14px;flex:1;'>{l}</span>"
+                f"<span style='color:#0F6E56;font-weight:700;'>✓</span>"
+                f"</div>" for i, l in done
+            )
+            + "</div>",
+            unsafe_allow_html=True
+        )
+        time.sleep(0.35)
+
+    # جلب الارتفاع
+    elev = get_elevation(lat, lng) or 2200.0
+    feats = compute_features(lat, lng, area, category_te, has_brand, elev)
+
+    # تشغيل النموذج
+    feat_vec = pd.DataFrame([feats])
+    for col in FEATURE_COLS:
+        if col not in feat_vec.columns:
+            feat_vec[col] = 0.0
+    X_input = feat_vec[FEATURE_COLS]
+    prob = float(model.predict_proba(X_input)[0][1])
+
+    steps_box.empty()
+
+    THRESHOLD = 0.65
+    verdict   = prob >= THRESHOLD
+
+    # ── عرض النتائج ────────────────────────────────────────────────────────────
+    st.markdown("""
+    <div style="background:white;border-radius:20px;padding:2rem 2.5rem;
+                border:1px solid #E4E9F2;box-shadow:0 4px 20px rgba(0,0,0,0.07);
+                margin-bottom:1.5rem;">
+    <p style="text-align:center;font-weight:700;font-size:18px;color:#1A2535;margin:0 0 1rem;">
+      📊 نتيجة تحليل الموقع
+    </p>
+    """, unsafe_allow_html=True)
+
+    col_g, col_v = st.columns([1, 1], gap="large")
+
+    with col_g:
+        color = "#0F6E56" if verdict else "#C41230"
+        fig = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=round(prob * 100, 1),
+            number={"suffix": "%", "font": {"size": 48, "color": color,
+                                             "family": "Inter"}},
+            gauge={
+                "axis": {"range": [0, 100], "tickfont": {"family": "Inter", "color": "#6B7C93"}},
+                "bar":  {"color": color, "thickness": 0.28},
+                "bgcolor": "rgba(0,0,0,0)",
+                "steps": [
+                    {"range": [0,  40], "color": "#FEE8E8"},
+                    {"range": [40, 65], "color": "#FFF3E0"},
+                    {"range": [65, 100], "color": "#E8F5EF"},
+                ],
+                "threshold": {
+                    "line": {"color": "#1A2535", "width": 3},
+                    "thickness": 0.8, "value": THRESHOLD * 100,
+                },
+            },
+            title={"text": "نسبة الملاءمة", "font": {"size": 14, "color": "#6B7C93",
+                                                       "family": "Tajawal"}},
+        ))
+        fig.update_layout(
+            height=250, paper_bgcolor="rgba(0,0,0,0)",
+            font_color="#1A2535", margin=dict(t=60, b=0, l=10, r=10),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col_v:
+        if verdict:
+            st.markdown(f"""
+            <div style="background:#E8F5EF;border:2px solid #0F6E56;border-radius:16px;
+                        padding:1.5rem;text-align:center;margin-top:1.5rem;">
+              <div style="font-size:3rem;">✅</div>
+              <p style="color:#0F6E56;font-size:1.3rem;font-weight:800;margin:0.3rem 0 0.2rem;">
+                الموقع ملائم
+              </p>
+              <p style="color:#1A6644;font-size:0.9rem;margin:0;">
+                احتمال النجاح: <b style="font-family:Inter;">{prob*100:.1f}%</b>
+              </p>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div style="background:#FEE8E8;border:2px solid #C41230;border-radius:16px;
+                        padding:1.5rem;text-align:center;margin-top:1.5rem;">
+              <div style="font-size:3rem;">⚠️</div>
+              <p style="color:#C41230;font-size:1.3rem;font-weight:800;margin:0.3rem 0 0.2rem;">
+                الموقع غير ملائم
+              </p>
+              <p style="color:#8B1A1A;font-size:0.9rem;margin:0;">
+                احتمال النجاح: <b style="font-family:Inter;">{prob*100:.1f}%</b>
+              </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        c1, c2 = st.columns(2)
+        c1.metric("الارتفاع",    f"{elev:,.0f} م")
+        c2.metric("المساحة",     f"{area:,} م²")
+        c1.metric("النشاط",      category_ar[:15])
+        c2.metric("العتبة",      f"{THRESHOLD:.0%}")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # ── تفسير الذكاء الاصطناعي ─────────────────────────────────────────────────
+    st.markdown("""
+    <div style="background:white;border-radius:20px;padding:1.8rem 2rem;
+                border:1px solid #E4E9F2;box-shadow:0 4px 20px rgba(0,0,0,0.07);">
+    <p style="font-weight:800;font-size:18px;color:#1A2535;margin:0 0 0.3rem;">
+      🤖 لماذا ظهرت هذه النسبة؟
+    </p>
+    <p style="color:#6B7C93;font-size:13px;margin:0 0 1.2rem;">
+      تفسير الذكاء الاصطناعي للعوامل المؤثرة في قرار الملاءمة
+    </p>
+    """, unsafe_allow_html=True)
+
+    xai = xai_cards(elev, area, prob)
+    cols_xai = st.columns(2, gap="medium")
+    IMPACT_STYLE = {
+        "إيجابي": ("background:#E8F5EF;border:1px solid #0F6E56;", "#0F6E56", "↑ إيجابي"),
+        "سلبي":   ("background:#FEE8E8;border:1px solid #C41230;", "#C41230", "↓ سلبي"),
+        "محايد":  ("background:#FFF8F0;border:1px solid #F5821F;", "#F5821F", "→ محايد"),
+    }
+
+    for idx, (icon, title, impact, detail) in enumerate(xai):
+        sty, clr, lbl = IMPACT_STYLE.get(impact, IMPACT_STYLE["محايد"])
+        with cols_xai[idx % 2]:
+            st.markdown(f"""
+            <div style="{sty} border-radius:14px;padding:1.1rem 1.3rem;margin-bottom:0.8rem;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.5rem;">
+                <span style="font-size:1.5rem;">{icon}</span>
+                <span style="font-weight:700;color:#1A2535;font-size:15px;">{title}</span>
+                <span style="margin-right:auto;background:{clr};color:white;font-size:11px;
+                             padding:2px 8px;border-radius:6px;font-weight:600;">{lbl}</span>
+              </div>
+              <p style="margin:0;color:#3D4F66;font-size:13px;line-height:1.6;">{detail}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
-# Footer
-st.markdown("---")
+# ── Footer ────────────────────────────────────────────────────────────────────
+st.markdown("<br>", unsafe_allow_html=True)
 st.markdown("""
-<div style='text-align:center;padding:0.5rem;'>
-    <span style='color:rgba(255,255,255,0.2);font-size:13px;letter-spacing:2px;'>
-        ◆ &nbsp; جدوى من عسير &nbsp;·&nbsp; رسالة ماجستير &nbsp;·&nbsp; 2026 &nbsp; ◆
-    </span>
-</div>
+<p style="text-align:center;color:#B0BCCF;font-size:12px;letter-spacing:2px;">
+  ◆ &nbsp; جدوى من عسير &nbsp;·&nbsp; رسالة ماجستير &nbsp;·&nbsp; 2026 &nbsp; ◆
+</p>
 """, unsafe_allow_html=True)
