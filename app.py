@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import joblib, time, requests
 import folium, plotly.graph_objects as go
+import shap
 from streamlit_folium import st_folium
 
 st.set_page_config(page_title="جدوى · أمانة عسير", page_icon="◆",
@@ -427,6 +428,73 @@ model, FEATURE_COLS, model_loaded = load_model()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# SHAP TreeExplainer — التفسير الحقيقي من النموذج
+# ══════════════════════════════════════════════════════════════════════════════
+@st.cache_resource
+def get_shap_explainer(_model):
+    """TreeExplainer يعمل مباشرة مع CatBoost دون الحاجة لبيانات خلفية"""
+    return shap.TreeExplainer(_model)
+
+FEATURE_ARABIC = {
+    "الاحداثي الجغرافي X":          ("📍", "الموقع — خط الطول"),
+    "الاحداثي الجغرافي Y":          ("📍", "الموقع — خط العرض"),
+    "الارتفاع":                      ("🏔️", "الارتفاع الجغرافي"),
+    "الانحدار":                      ("⛰️", "انحدار التضاريس"),
+    "المسافة_للشارع_الأقرب_لوغ":    ("🛣️", "المسافة لأقرب شارع"),
+    "المسافة_للطريق_الشرياني_لوغ":  ("🛤️", "البُعد عن الطريق الشرياني"),
+    "المسافة_لأقرب_معلم_سياحي_لوغ": ("🏛️", "القرب من المعالم السياحية"),
+    "رتبة_الطريق":                   ("🛣️", "رتبة الطريق المجاور"),
+    "مؤشر_الحيوية_الحضرية":         ("🏙️", "مؤشر الحيوية الحضرية (UVI)"),
+    "كثافة_تجارية_500م_لوغ":        ("🏪", "الكثافة التجارية في 500م"),
+    "عدد_مباني_فعلي_500م_لوغ":      ("🏗️", "عدد المباني في 500م"),
+    "متوسط_عمر_المنافسين_يوم_لوغ":  ("📅", "متوسط عمر المنافسين"),
+    "عدد_منافسين_مباشرين_500م_لوغ": ("⚔️", "عدد المنافسين المباشرين"),
+    "مسافة_أقرب_مباشر_متر_لوغ":    ("📏", "المسافة لأقرب منافس"),
+    "المعدل_الجواري":                ("📊", "معدل نجاح الحي"),
+    "معدل_إغلاق_الفئة_لوغ":         ("📉", "معدل الإغلاق في الفئة"),
+    "مساحة_المنشأة_لوغ":            ("📐", "مساحة المحل"),
+    "الانتماء_لعلامة_تجارية":       ("✨", "الانتماء لعلامة تجارية"),
+    "مدة_الرخصة_لوغ":              ("📋", "مدة الرخصة"),
+    "نوع_المنشأة_TE":               ("🏢", "نوع المنشأة"),
+    "فئة_النشاط_TE":                ("🏷️", "فئة النشاط التجاري"),
+}
+
+
+def compute_real_shap(model, X_input, feature_cols):
+    """
+    يحسب قيم SHAP الحقيقية من نموذج CatBoost
+    القيمة الموجبة → يرفع احتمال الملاءمة
+    القيمة السالبة → يخفض احتمال الملاءمة
+    """
+    try:
+        explainer  = get_shap_explainer(model)
+        shap_vals  = explainer.shap_values(X_input)
+
+        # CatBoost يُعيد array بشكل (n_samples, n_features)
+        if isinstance(shap_vals, list):
+            vals = shap_vals[1][0]   # الفئة الإيجابية
+        else:
+            vals = shap_vals[0] if shap_vals.ndim == 2 else shap_vals
+
+        total_abs = np.sum(np.abs(vals)) + 1e-9
+
+        results = []
+        for feat, val in zip(feature_cols, vals):
+            icon, arabic_name = FEATURE_ARABIC.get(feat, ("◆", feat))
+            impact   = "pos" if val > 0 else ("neg" if val < 0 else "neu")
+            pct_bar  = int(min(99, abs(val) / total_abs * 500))   # نسبة مرئية مُكبَّرة
+            sign_txt = f"+{val:.3f}" if val > 0 else f"{val:.3f}"
+            results.append((icon, arabic_name, impact, val, pct_bar, sign_txt, feat))
+
+        # ترتيب حسب الأثر المطلق — أعلى 5
+        results.sort(key=lambda x: abs(x[3]), reverse=True)
+        return results[:5], True
+
+    except Exception as e:
+        return None, False
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # القواميس
 # ══════════════════════════════════════════════════════════════════════════════
 CATEGORIES = {
@@ -483,25 +551,7 @@ def compute_features(lat, lng, area, cat_te, has_brand, elevation):
     }
 
 
-def build_xai(elevation, area, prob):
-    v = prob >= 0.65
-    data = [
-        ("🏔️", "التضاريس الجغرافية",
-         "pos" if elevation < 2500 else "neg",
-         f"ارتفاع {elevation:,.0f}م — {'مناسب لحركة الزبائن' if elevation<2500 else 'شاهق قد يُقيّد الوصول'}",
-         min(100, max(20, int(100 - (elevation - 1500) / 20)))),
-        ("🛣️", "الوصولية الطرقية",
-         "pos", "قرب من طريق مجمع — يرفع التدفق اليومي للزبائن", 72),
-        ("🏙️", "الحيوية الحضرية",
-         "pos", "مؤشر POI 5.2 — منطقة نابضة تجارياً وخدمياً", 65),
-        ("⚔️", "بيئة المنافسة",
-         "neu", "5 منافسين في 500م — منافسة معتدلة تُشير لطلب فعلي", 48),
-        ("📐", "مساحة المحل",
-         "pos" if 50 <= area <= 500 else "neu",
-         f"مساحة {area}م² — {'مثالية للتشغيل الفعّال' if 50<=area<=500 else 'تحتاج تقييم دقيق للتكاليف'}",
-         60 if 50 <= area <= 500 else 40),
-    ]
-    return data
+
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -722,9 +772,12 @@ if analyze:
         if c not in fv.columns: fv[c] = 0.0
     prob = float(model.predict_proba(fv[FEATURE_COLS])[0][1])
 
+    # حفظ X_input في session state لإعادة استخدامه في SHAP
     st.session_state["results"] = {
         "prob": prob, "elevation": elev,
         "area": area, "cat_key": category_key, "elev": elev,
+        "X_cols": FEATURE_COLS,
+        "X_vals": fv[FEATURE_COLS].values.tolist(),
     }
     proc_ph.empty()
     st.rerun()
@@ -738,6 +791,8 @@ if results:
     elev      = results["elevation"]
     area_r    = results["area"]
     cat_key_r = results["cat_key"]
+    # إعادة بناء fv من القيم المحفوظة
+    fv = pd.DataFrame(results["X_vals"], columns=results["X_cols"])
     verdict   = prob >= 0.65
     cls       = "success" if verdict else "fail"
     pct       = f"{prob*100:.1f}"
@@ -810,29 +865,56 @@ if results:
         st.plotly_chart(fig, use_container_width=True)
 
     with col_xai:
-        xai_data = build_xai(elev, area_r, prob)
-        st.markdown("""
-        <div class="xai-wrap">
-          <p class="xai-title">🤖 تفسير الذكاء الاصطناعي</p>
-          <p class="xai-sub">أبرز العوامل المؤثرة في نسبة الملاءمة — مُرتّبة بحسب الأهمية</p>
-        """, unsafe_allow_html=True)
+        # ── SHAP الحقيقي ──────────────────────────────────────────────────
+        shap_data, shap_ok = compute_real_shap(model, fv[FEATURE_COLS], FEATURE_COLS)
 
-        for icon, name, cls_b, desc, pct_b in xai_data:
-            badge_txt = {"pos": "إيجابي ▲", "neg": "سلبي ▼", "neu": "محايد →"}[cls_b]
+        if shap_ok and shap_data:
+            badge_map = {"pos": "إيجابي ▲", "neg": "سلبي ▼", "neu": "محايد →"}
+
+            # توضيح معنى القيمة الأساسية
+            base_val = get_shap_explainer(model).expected_value
+            base_pct = float(
+                1 / (1 + __import__('math').exp(-base_val))
+                if not isinstance(base_val, (list, __import__('numpy').ndarray))
+                else 1 / (1 + __import__('math').exp(-base_val[1]))
+            ) * 100
+
             st.markdown(f"""
-            <div class="xai-row">
-              <div class="xai-row-header">
-                <span class="xai-factor-name">{icon} {name}</span>
-                <span class="xai-impact-badge {cls_b}">{badge_txt}</span>
-              </div>
-              <div class="xai-bar-track">
-                <div class="xai-bar-fill {cls_b}" style="width:{pct_b}%;"></div>
-              </div>
-              <p class="xai-desc">{desc}</p>
-            </div>
+            <div class="xai-wrap">
+              <p class="xai-title">🤖 تفسير الذكاء الاصطناعي — SHAP الفعلي</p>
+              <p class="xai-sub">
+                القيم مُستخرجة من نموذج CatBoost مباشرةً ·
+                القاعدة الأساسية للنموذج: <b style="font-family:'IBM Plex Mono',monospace;">{base_pct:.1f}%</b> ·
+                أبرز 5 عوامل مُرتّبة بحسب الأثر المطلق
+              </p>
             """, unsafe_allow_html=True)
 
-        st.markdown("</div>", unsafe_allow_html=True)
+            for icon, name, cls_b, val, pct_b, sign_txt, feat in shap_data:
+                badge_txt = badge_map[cls_b]
+                desc_map = {
+                    "pos": f"يرفع احتمال الملاءمة ({sign_txt})",
+                    "neg": f"يخفض احتمال الملاءمة ({sign_txt})",
+                    "neu": f"أثر محايد ({sign_txt})",
+                }
+                st.markdown(f"""
+                <div class="xai-row">
+                  <div class="xai-row-header">
+                    <span class="xai-factor-name">{icon} {name}</span>
+                    <span class="xai-impact-badge {cls_b}">{badge_txt}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;
+                                 color:#64748B;margin-right:auto;">{sign_txt}</span>
+                  </div>
+                  <div class="xai-bar-track">
+                    <div class="xai-bar-fill {cls_b}" style="width:{min(pct_b,99)}%;"></div>
+                  </div>
+                  <p class="xai-desc">{desc_map[cls_b]}</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        else:
+            st.warning("⚠️ تعذّر حساب قيم SHAP — تأكدي من توافق إصدار CatBoost وshap")
 
     # إحصاءات مفصلة
     st.markdown("""
