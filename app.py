@@ -449,42 +449,51 @@ def get_poi_count(lat, lng):
 
 def compute_features(lat, lng, area, cat_te, brand, elev, category=""):
     """
-    يحسب جميع المتغيرات — جزء حقيقي من Overpass API،
-    وجزء مبني على الفئة والموقع بدلاً من قيم ثابتة
+    يحسب جميع المتغيرات:
+    ✅ مكانية حقيقية من businesses.csv (المنافسون، الكثافة، المعدل الجواري)
+    ✅ شارع حقيقي من Overpass API
+    ✅ ارتفاع حقيقي من Open-Elevation
+    ✅ قيم الفئة من بيانات عسير
     """
     sl = min(max((elev - 1500) / 100, 2.0), 25.0)
 
-    # ① الشارع الأقرب — من session_state إن وُجد، وإلا من Overpass
-    cached = st.session_state.get("road_info")
-    if cached:
-        road_rank = cached["rank"]
-        dist_road = cached["dist"]
+    # ① الشارع — من session_state (تم جلبه عند تثبيت الموقع)
+    cached_road = st.session_state.get("road_info")
+    if cached_road:
+        road_rank = cached_road["rank"]
+        dist_road = cached_road["dist"]
     else:
         road_rank, dist_road, _ = get_road_from_osm(lat, lng)
 
-    # ② الكثافة التجارية — من OpenStreetMap
-    poi_raw = get_poi_count(lat, lng)
+    # ② الموقع: أبها أم خميس مشيط
+    is_abha      = lat < 18.27
+    dist_arterial = 650 if is_abha else 900
+    dist_tourist  = 1800 if is_abha else 4500
+    uvi           = 6.1  if is_abha else 4.8
+    buildings_n   = 100  if is_abha else 65
 
-    # ③ قيم مختلفة حسب الفئة (من بيانات عسير)
-    closure_rate   = CAT_CLOSURE.get(category, 0.28)
-    n_competitors  = CAT_COMPETITORS.get(category, 5)
+    # ③ القيم المكانية الحقيقية من businesses.csv
+    biz_df = load_businesses()
+    spatial = compute_spatial_features(lat, lng, category, biz_df)
 
-    # ④ قيم مختلفة حسب الموقع
-    # أبها: منطقة مركزية أكثر كثافة (lat ≈ 18.22)
-    # خميس مشيط: نسبياً أهدأ (lat ≈ 18.30)
-    is_abha = lat < 18.27
-    commercial_n   = poi_raw if poi_raw else (38 if is_abha else 24)
-    buildings_n    = 100 if is_abha else 65
-    hood_rate      = 0.68 if is_abha else 0.62
-    dist_arterial  = 650 if is_abha else 900  # أبها أكثر شوارع شريانية
-    uvi            = 6.1 if is_abha else 4.8
-    competitor_age = 800 if is_abha else 600   # أبها: منافسون أقدم
+    if spatial:
+        # ✅ قيم حقيقية محسوبة من البيانات
+        hood_rate      = spatial["hood_rate"]
+        commercial_n   = spatial["commercial_n"]
+        n_competitors  = spatial["n_competitors"]
+        competitor_age = spatial["avg_age"]
+        dist_direct    = spatial["dist_direct"]
+    else:
+        # Fallback إن لم يُوجد الملف
+        closure_rate   = CAT_CLOSURE.get(category, 0.28)
+        n_competitors  = CAT_COMPETITORS.get(category, 5)
+        hood_rate      = 0.68 if is_abha else 0.62
+        commercial_n   = 38   if is_abha else 24
+        competitor_age = 800  if is_abha else 600
+        dist_direct    = max(40, int(500 / max(n_competitors, 1)))
 
-    # ⑤ مسافة أقرب منافس تنعكس مع عدد المنافسين
-    dist_direct = max(40, int(500 / max(n_competitors, 1)))
-
-    # ⑥ مسافة المعلم السياحي — أبها أقرب من الجبل الأخضر وتلفريك
-    dist_tourist = 1800 if is_abha else 4500
+    # معدل الإغلاق من إحصاءات الفئة (لا يتغير مكانياً)
+    closure_rate = CAT_CLOSURE.get(category, 0.28)
 
     return {
         "الاحداثي الجغرافي X":          lng,
@@ -498,9 +507,9 @@ def compute_features(lat, lng, area, cat_te, brand, elev, category=""):
         "مؤشر_الحيوية_الحضرية":         uvi,
         "كثافة_تجارية_500م_لوغ":        np.log1p(commercial_n),
         "عدد_مباني_فعلي_500م_لوغ":      np.log1p(buildings_n),
-        "متوسط_عمر_المنافسين_يوم_لوغ":  np.log1p(competitor_age),
+        "متوسط_عمر_المنافسين_يوم_لوغ":  np.log1p(max(competitor_age, 1)),
         "عدد_منافسين_مباشرين_500م_لوغ": np.log1p(n_competitors),
-        "مسافة_أقرب_مباشر_متر_لوغ":    np.log1p(dist_direct),
+        "مسافة_أقرب_مباشر_متر_لوغ":    np.log1p(max(dist_direct, 1)),
         "المعدل_الجواري":                hood_rate,
         "معدل_إغلاق_الفئة_لوغ":         np.log1p(closure_rate),
         "مساحة_المنشأة_لوغ":            np.log1p(area),
