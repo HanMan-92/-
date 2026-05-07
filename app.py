@@ -510,6 +510,26 @@ CATEGORIES = {
     "🏪  مستودعات وتخزين":       0.65,
 }
 
+# طبقات الخريطة — محفوظة في session_state لتستمر عبر إعادة التشغيل
+TILES = {
+    "🏔️ تضاريس": (
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}",
+        "Esri World Shaded Relief"
+    ),
+    "🛰️ صور جوية": (
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        "Esri World Imagery"
+    ),
+    "🗺️ طبوغرافية": (
+        "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+        "OpenTopoMap contributors"
+    ),
+    "⬜ نظيفة": (
+        "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+        "CartoDB"
+    ),
+}
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # دوال مساعدة
