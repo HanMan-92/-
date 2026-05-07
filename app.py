@@ -254,12 +254,47 @@ CAT_COMPETITORS = {
     "مستودعات وتخزين": 2,
 }
 
-# رتبة الطريق الأساسية حسب نوع الخريطة (Overpass API)
+# رتبة الطريق — مطابق لتصنيف OSM الموجود في بيانات عسير
 ROAD_RANK_OSM = {
-    "motorway": 9, "trunk": 8, "primary": 7, "secondary": 6,
-    "tertiary": 5, "living_street": 4, "residential": 3,
-    "service": 2, "unclassified": 1,
+    "motorway":     9,   # طريق سريع
+    "trunk":        8,   # طريق رئيسي
+    "primary":      7,   # طريق شرياني
+    "secondary":    6,   # طريق مجمع
+    "tertiary":     5,   # طريق فرعي
+    "living_street":4,   # شارع معيشة
+    "residential":  3,   # شارع سكني
+    "service":      2,   # طريق خدمة
+    "track":        2,   # مسار ترابي
+    "unclassified": 1,
+    "footway":      1,   # ممشى
+    "steps":        1,
+    "pedestrian":   1,
 }
+
+# التسميات العربية + معدل النجاح الحقيقي من بيانات عسير (22,917 رخصة)
+ROAD_INFO = {
+    "motorway":     {"ar": "طريق سريع",    "rate": 65.8, "color": "#059669",
+                     "desc": "طرق سريعة — حركة مرور عالية جداً"},
+    "trunk":        {"ar": "طريق رئيسي",   "rate": 66.1, "color": "#059669",
+                     "desc": "أعلى معدل نجاح في البيانات (66.1%) — موقع ممتاز"},
+    "primary":      {"ar": "طريق شرياني",  "rate": 55.4, "color": "#16A34A",
+                     "desc": "طرق شريانية تربط المناطق الرئيسية"},
+    "secondary":    {"ar": "طريق مجمع",    "rate": 60.8, "color": "#CA8A04",
+                     "desc": "يجمع حركة الأحياء ويصبّها في الطرق الرئيسية"},
+    "tertiary":     {"ar": "طريق فرعي",    "rate": 63.3, "color": "#CA8A04",
+                     "desc": "طرق داخل الأحياء — 13% من مجمل المشاريع"},
+    "service":      {"ar": "طريق خدمة",    "rate": 61.4, "color": "#D97706",
+                     "desc": "طرق الخدمات والمداخل — 12% من المشاريع"},
+    "living_street":{"ar": "شارع معيشة",   "rate": 57.1, "color": "#EA580C",
+                     "desc": "شوارع مختلطة للسيارات والمشاة"},
+    "residential":  {"ar": "شارع سكني",    "rate": 60.7, "color": "#DC2626",
+                     "desc": "الأكثر شيوعاً — 57% من مشاريع عسير على شوارع سكنية"},
+    "track":        {"ar": "مسار ترابي",   "rate": 58.3, "color": "#B91C1C",
+                     "desc": "مسارات ترابية غير معبّدة"},
+    "footway":      {"ar": "ممشى للمشاة",  "rate": 0.0,  "color": "#9F1239",
+                     "desc": "ممر مشاة — غير مناسب للنشاط التجاري العادي"},
+}
+DEFAULT_ROAD = "residential"   # الأكثر شيوعاً في البيانات (57%)
 
 CITIES = {
     "أبها":          (18.2200, 42.5100),
@@ -383,14 +418,13 @@ def get_road_from_osm(lat, lng):
         if r.status_code == 200:
             ways = [e for e in r.json().get("elements", []) if e.get("type") == "way"]
             if ways:
-                hw = ways[0].get("tags", {}).get("highway", "secondary")
-                rank = ROAD_RANK_OSM.get(hw, 6)
-                # تقدير المسافة بناءً على رتبة الطريق
+                hw = ways[0].get("tags", {}).get("highway", DEFAULT_ROAD)
+                rank = ROAD_RANK_OSM.get(hw, 3)
                 dist = 20 if rank >= 7 else 50 if rank >= 5 else 100
-                return rank, dist
+                return rank, dist, hw   # نُعيد نوع الشارع الأصلي أيضاً
     except Exception:
         pass
-    return 6, 35   # default: طريق مجمع
+    return 3, 80, DEFAULT_ROAD   # default: شارع سكني (الأكثر شيوعاً في البيانات)
 
 def get_poi_count(lat, lng):
     """يحسب عدد نقاط الاهتمام التجارية في 500م من OpenStreetMap"""
@@ -420,8 +454,13 @@ def compute_features(lat, lng, area, cat_te, brand, elev, category=""):
     """
     sl = min(max((elev - 1500) / 100, 2.0), 25.0)
 
-    # ① الشارع الأقرب — من OpenStreetMap
-    road_rank, dist_road = get_road_from_osm(lat, lng)
+    # ① الشارع الأقرب — من session_state إن وُجد، وإلا من Overpass
+    cached = st.session_state.get("road_info")
+    if cached:
+        road_rank = cached["rank"]
+        dist_road = cached["dist"]
+    else:
+        road_rank, dist_road, _ = get_road_from_osm(lat, lng)
 
     # ② الكثافة التجارية — من OpenStreetMap
     poi_raw = get_poi_count(lat, lng)
@@ -606,6 +645,7 @@ def ss(k, v):
 
 ss("lat", 18.2200); ss("lng", 42.5100)
 ss("results", None); ss("_lc", None); ss("tile", "خريطة المواقع")
+ss("road_info", None)   # نوع الشارع المكتشف
 
 lat = st.session_state["lat"]
 lng = st.session_state["lng"]
@@ -817,11 +857,53 @@ with col_map:
                 st.rerun()
 
     if _cl and _cl != st.session_state["_lc"] and (abs(_cl[0]-lat)>0.0001 or abs(_cl[1]-lng)>0.0001):
-        st.session_state.update({"lat":_cl[0],"lng":_cl[1],"_lc":_cl,"results":None})
+        rrank, rdist, rosm = get_road_from_osm(_cl[0], _cl[1])
+        st.session_state.update({
+            "lat": _cl[0], "lng": _cl[1], "_lc": _cl,
+            "results": None,
+            "road_info": {"rank": rrank, "dist": rdist, "osm_type": rosm},
+        })
         st.rerun()
 
     lat = st.session_state["lat"]
     lng = st.session_state["lng"]
+
+
+    # ── عرض نوع الشارع المكتشف ──────────────────────────────────────────
+    ri = st.session_state.get("road_info")
+    if ri:
+        rk = ri["rank"]; rd = ri["dist"]
+        osm_type = ri.get("osm_type", "residential")
+        info = ROAD_INFO.get(osm_type, ROAD_INFO["residential"])
+        rlabel = info["ar"]
+        rcolor = info["color"]
+        rdesc  = info["desc"]
+        rrate  = info["rate"]
+        stars  = "★" * min(rk, 5) + "☆" * (5 - min(rk, 5))
+        st.markdown(
+            "<div style='background:white;border:1px solid #CBD5E1;"
+            "border-right:4px solid " + rcolor + ";border-radius:10px;"
+            "padding:0.7rem 1rem;margin-top:8px;direction:rtl;'>"
+            "<div style='display:flex;align-items:center;gap:10px;flex-wrap:wrap;'>"
+            "<span style='font-size:13px;font-weight:700;color:" + rcolor + ";'>"
+            "🛣️ " + rlabel + "</span>"
+            "<span style='font-size:11px;color:#64748B;font-family:IBM Plex Mono,monospace;'>"
+            "رتبة " + str(rk) + "/9 · على بُعد ~" + str(rd) + "م</span>"
+            "<span style='font-size:13px;color:#CA8A04;letter-spacing:1px;'>" + stars + "</span>"
+            "</div>"
+            "<p style='margin:4px 0 0;font-size:12px;color:#64748B;'>" + rdesc + "</p>"
+            "</div>",
+            unsafe_allow_html=True
+        )
+    else:
+        st.markdown(
+            "<div style='background:#F8FAFC;border:1px solid #E2E8F0;"
+            "border-radius:10px;padding:0.6rem 1rem;margin-top:8px;"
+            "font-size:12px;color:#94A3B8;direction:rtl;'>"
+            "🛣️ سيظهر نوع الشارع تلقائياً عند تحديد الموقع"
+            "</div>",
+            unsafe_allow_html=True
+        )
 
     if not in_study_area(lat, lng):
         st.warning("⚠️ الموقع خارج نطاق الدراسة (أبها وخميس مشيط) — النتائج قد تكون غير دقيقة.")
