@@ -28,6 +28,14 @@ st.set_page_config(
 st.markdown("""
 <style>
 
+/* ══ 0. خط تجوّل العربي ══════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap');
+
+html, body, [class*="css"], .stMarkdown, .stButton, label, p, h1, h2, h3,
+[data-testid="stSidebar"], .stTabs, .stSelectbox, input, button {
+    font-family: 'Tajawal', sans-serif !important;
+}
+
 /* ══ 1. خلفية نمط الماس ═══════════════════════════════════════════════════ */
 .stApp {
     background-color: #0D1B2A;
@@ -162,10 +170,162 @@ hr { border-color: rgba(196,18,48,0.3) !important; margin: 1rem 0 !important; }
 # ─────────────────────────────────────────────────────────────────────────────
 # رأسية البطل — "جدوى من عسير" + أفق عمراني
 # ─────────────────────────────────────────────────────────────────────────────
-st.markdown("<h1 style='text-align:center;color:white;font-size:3.8rem;font-weight:900;letter-spacing:8px;margin:0.5rem 0 0;padding-top:1rem;'>جدوى</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center;color:#F5821F;font-size:1rem;letter-spacing:5px;font-weight:500;margin:0.2rem 0;'>من عسير</p>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center;color:rgba(255,255,255,0.6);font-size:0.85rem;margin:0 0 0.5rem;'>نظام ذكي لتقييم ملاءمة المواقع التجارية · أبها وخميس مشيط</p>", unsafe_allow_html=True)
-st.markdown("<hr style='border-color:rgba(196,18,48,0.4);margin:0.8rem 0 1.5rem;'>", unsafe_allow_html=True)
+# ── رسم أفق عسير بالـ SVG ──────────────────────────────────────────────────
+st.markdown("""
+<svg width="100%" viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- السماء -->
+  <rect width="680" height="200" fill="#070E18"/>
+
+  <!-- نجوم -->
+  <circle cx="25"  cy="12" r="0.9" fill="white" opacity="0.7"/>
+  <circle cx="70"  cy="6"  r="0.7" fill="white" opacity="0.5"/>
+  <circle cx="130" cy="18" r="1"   fill="white" opacity="0.6"/>
+  <circle cx="200" cy="9"  r="0.8" fill="white" opacity="0.7"/>
+  <circle cx="280" cy="14" r="0.6" fill="white" opacity="0.5"/>
+  <circle cx="350" cy="5"  r="1"   fill="white" opacity="0.8"/>
+  <circle cx="430" cy="18" r="0.7" fill="white" opacity="0.6"/>
+  <circle cx="500" cy="8"  r="0.9" fill="white" opacity="0.5"/>
+  <circle cx="580" cy="13" r="0.8" fill="white" opacity="0.7"/>
+  <circle cx="640" cy="6"  r="0.6" fill="white" opacity="0.6"/>
+  <circle cx="660" cy="22" r="0.8" fill="white" opacity="0.5"/>
+
+  <!-- هلال -->
+  <circle cx="620" cy="28" r="14" fill="#F0D88A" opacity="0.9"/>
+  <circle cx="628" cy="24" r="11" fill="#070E18"/>
+
+  <!-- جبال عسير (الخلفية) -->
+  <polygon points="0,200 0,140 60,95 110,115 160,70 230,105 300,45 360,80 420,48 480,85 540,58 600,88 650,68 680,80 680,200"
+           fill="#0A1828" opacity="0.98"/>
+  <!-- ثلج على القمم -->
+  <polygon points="300,45 293,62 307,62" fill="white" opacity="0.85"/>
+  <polygon points="420,48 414,64 426,64" fill="white" opacity="0.75"/>
+  <polygon points="160,70 154,85 166,85" fill="white" opacity="0.6"/>
+
+  <!-- ════ مشاريع عسير ════ -->
+
+  <!-- 1. مبنى حديث (سودة / أبها) - يسار -->
+  <rect x="20" y="118" width="65" height="82" fill="#152535" rx="2"/>
+  <rect x="20" y="112" width="65" height="9"  fill="#C41230" rx="1"/>
+  <!-- شبابيك زجاجية -->
+  <rect x="26" y="122" width="13" height="18" fill="rgba(80,170,255,0.35)" rx="1"/>
+  <rect x="43" y="122" width="13" height="18" fill="rgba(80,170,255,0.45)" rx="1"/>
+  <rect x="60" y="122" width="13" height="18" fill="rgba(80,170,255,0.3)"  rx="1"/>
+  <rect x="26" y="145" width="13" height="18" fill="rgba(80,170,255,0.4)"  rx="1"/>
+  <rect x="43" y="145" width="13" height="18" fill="rgba(80,170,255,0.25)" rx="1"/>
+  <rect x="60" y="145" width="13" height="18" fill="rgba(80,170,255,0.45)" rx="1"/>
+  <rect x="26" y="168" width="13" height="18" fill="rgba(80,170,255,0.3)"  rx="1"/>
+  <rect x="43" y="168" width="13" height="18" fill="rgba(80,170,255,0.4)"  rx="1"/>
+  <rect x="60" y="168" width="13" height="18" fill="rgba(80,170,255,0.35)" rx="1"/>
+
+  <!-- 2. منازل رجال ألمع التراثية -->
+  <!-- البيت الكبير -->
+  <rect x="115" y="110" width="55" height="90" fill="#5A4535" rx="2"/>
+  <rect x="113" y="104" width="59" height="9"  fill="#6B5040" rx="1"/>
+  <!-- أعلام الطوابق -->
+  <line x1="115" y1="130" x2="170" y2="130" stroke="#3D2D20" stroke-width="0.7"/>
+  <line x1="115" y1="150" x2="170" y2="150" stroke="#3D2D20" stroke-width="0.7"/>
+  <line x1="115" y1="170" x2="170" y2="170" stroke="#3D2D20" stroke-width="0.7"/>
+  <!-- شبابيك ملونة (طراز عسير) -->
+  <rect x="122" y="113" width="9"  height="13" fill="#C41230" opacity="0.92"/>
+  <rect x="135" y="113" width="9"  height="13" fill="#27AE60" opacity="0.92"/>
+  <rect x="148" y="113" width="9"  height="13" fill="#F5821F" opacity="0.92"/>
+  <rect x="122" y="133" width="9"  height="13" fill="#2980B9" opacity="0.9"/>
+  <rect x="135" y="133" width="9"  height="13" fill="#C41230" opacity="0.9"/>
+  <rect x="148" y="133" width="9"  height="13" fill="#27AE60" opacity="0.9"/>
+  <rect x="122" y="153" width="9"  height="13" fill="#F5821F" opacity="0.88"/>
+  <rect x="135" y="153" width="9"  height="13" fill="#2980B9" opacity="0.88"/>
+  <rect x="148" y="153" width="9"  height="13" fill="#C41230" opacity="0.88"/>
+  <!-- الباب -->
+  <rect x="134" y="178" width="14" height="22" fill="#3D2D20" rx="2"/>
+
+  <!-- 3. تلفريك أبها -->
+  <!-- برج 1 -->
+  <rect x="226" y="100" width="7" height="100" fill="#607080" rx="1"/>
+  <polygon points="226,100 229.5,92 233,100" fill="#506070"/>
+  <!-- برج 2 -->
+  <rect x="330" y="112" width="7" height="88" fill="#607080" rx="1"/>
+  <polygon points="330,112 333.5,104 337,112" fill="#506070"/>
+  <!-- كابل -->
+  <path d="M229.5 100 Q279 128 333.5 112" stroke="#90A0B0" stroke-width="1.5" fill="none"/>
+  <!-- العربة -->
+  <rect x="262" y="117" width="24" height="15" fill="#C41230" rx="3"/>
+  <line x1="274" y1="117" x2="274" y2="123" stroke="#90A0B0" stroke-width="1.5"/>
+  <rect x="265" y="120" width="6" height="7" fill="rgba(255,255,255,0.7)" rx="1"/>
+  <rect x="275" y="120" width="6" height="7" fill="rgba(255,255,255,0.7)" rx="1"/>
+
+  <!-- 4. برج المراقبة (سودة) -->
+  <rect x="385" y="105" width="32" height="95" fill="#1B2E42" rx="2"/>
+  <rect x="377" y="100" width="48" height="9"  fill="#1B3A6B" rx="3"/>
+  <rect x="380" y="94"  width="42" height="8"  fill="#C41230" rx="2"/>
+  <line x1="401" y1="94"  x2="401" y2="78"  stroke="#9BAABF" stroke-width="2"/>
+  <circle cx="401" cy="77" r="3.5" fill="#F5821F"/>
+  <rect x="392" y="112" width="10" height="13" fill="rgba(80,170,255,0.4)" rx="1"/>
+  <rect x="392" y="132" width="10" height="13" fill="rgba(80,170,255,0.3)" rx="1"/>
+  <rect x="392" y="152" width="10" height="13" fill="rgba(80,170,255,0.4)" rx="1"/>
+  <rect x="392" y="172" width="10" height="13" fill="rgba(80,170,255,0.3)" rx="1"/>
+
+  <!-- 5. مجمع تجاري حديث (أبها مول) -->
+  <rect x="450" y="130" width="80" height="70" fill="#12253A" rx="2"/>
+  <rect x="450" y="123" width="80" height="10" fill="#0F6E56" rx="1"/>
+  <rect x="456" y="136" width="16" height="22" fill="rgba(80,200,180,0.35)" rx="1"/>
+  <rect x="477" y="136" width="16" height="22" fill="rgba(80,200,180,0.45)" rx="1"/>
+  <rect x="498" y="136" width="16" height="22" fill="rgba(80,200,180,0.3)"  rx="1"/>
+  <rect x="456" y="163" width="16" height="22" fill="rgba(80,200,180,0.4)"  rx="1"/>
+  <rect x="477" y="163" width="16" height="22" fill="rgba(80,200,180,0.25)" rx="1"/>
+  <rect x="498" y="163" width="16" height="22" fill="rgba(80,200,180,0.45)" rx="1"/>
+  <!-- شعار المجمع -->
+  <polygon points="488,126 490,121 492,126" fill="#F5821F"/>
+
+  <!-- 6. منازل تراثية صغيرة (يمين) -->
+  <rect x="565" y="140" width="42" height="60" fill="#5A4030" rx="2"/>
+  <rect x="563" y="133" width="46" height="10" fill="#6B5040" rx="1"/>
+  <rect x="572" y="143" width="8"  height="11" fill="#C41230" opacity="0.9"/>
+  <rect x="585" y="143" width="8"  height="11" fill="#2980B9" opacity="0.9"/>
+  <rect x="572" y="160" width="8"  height="11" fill="#27AE60" opacity="0.88"/>
+  <rect x="585" y="160" width="8"  height="11" fill="#F5821F" opacity="0.88"/>
+  <rect x="578" y="178" width="11" height="22" fill="#3D2D20" rx="1"/>
+
+  <!-- 7. فندق عسير / مشروع سياحي -->
+  <rect x="628" y="115" width="45" height="85" fill="#1B3A6B" rx="2"/>
+  <rect x="628" y="108" width="45" height="10" fill="#F5821F" rx="1"/>
+  <rect x="634" y="118" width="10" height="14" fill="rgba(255,220,80,0.4)" rx="1"/>
+  <rect x="648" y="118" width="10" height="14" fill="rgba(255,220,80,0.35)" rx="1"/>
+  <rect x="634" y="138" width="10" height="14" fill="rgba(255,220,80,0.45)" rx="1"/>
+  <rect x="648" y="138" width="10" height="14" fill="rgba(255,220,80,0.3)"  rx="1"/>
+  <rect x="634" y="158" width="10" height="14" fill="rgba(255,220,80,0.4)"  rx="1"/>
+  <rect x="648" y="158" width="10" height="14" fill="rgba(255,220,80,0.45)" rx="1"/>
+  <!-- نخلة -->
+  <line x1="614" y1="200" x2="614" y2="172" stroke="#27AE60" stroke-width="2.5"/>
+  <ellipse cx="614" cy="167" rx="11" ry="8" fill="#1A7A40" opacity="0.85"/>
+
+  <!-- خط الأفق المضيء -->
+  <rect x="0" y="197" width="680" height="3" fill="rgba(245,130,31,0.45)"/>
+
+  <!-- إضاءة المباني في الليل -->
+  <circle cx="401" cy="77"  r="4"  fill="#F5821F" opacity="0.6"/>
+  <circle cx="274" cy="116" r="2"  fill="white"   opacity="0.5"/>
+  <circle cx="229" cy="99"  r="2"  fill="white"   opacity="0.4"/>
+  <circle cx="334" cy="111" r="2"  fill="white"   opacity="0.4"/>
+
+</svg>
+""", unsafe_allow_html=True)
+
+# العنوان
+st.markdown("""
+<div style="text-align:center;padding:0.8rem 0 0.3rem;">
+  <h1 style="color:white;font-size:4rem;font-weight:900;letter-spacing:8px;
+             margin:0;font-family:'Tajawal',sans-serif;
+             text-shadow:0 0 30px rgba(196,18,48,0.5);">جدوى</h1>
+  <p style="color:#F5821F;font-size:1.05rem;letter-spacing:5px;
+            font-weight:600;margin:0.2rem 0 0.4rem;font-family:'Tajawal',sans-serif;">من عسير</p>
+  <p style="color:rgba(255,255,255,0.55);font-size:0.9rem;margin:0;
+            font-family:'Tajawal',sans-serif;">
+    نظام ذكي لتقييم ملاءمة المواقع التجارية · أبها وخميس مشيط
+  </p>
+</div>
+<hr style="border:none;border-top:1px solid rgba(196,18,48,0.35);margin:0.8rem 0 1.5rem;">
+""", unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
