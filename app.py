@@ -28,12 +28,21 @@ st.set_page_config(
 st.markdown("""
 <style>
 
-/* ══ 0. خط تجوّل العربي ══════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap');
+/* ══ 0. خط تجوّل العربي + أرقام إنجليزية ══════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Inter:wght@400;500;600&display=swap');
 
 html, body, [class*="css"], .stMarkdown, .stButton, label, p, h1, h2, h3,
-[data-testid="stSidebar"], .stTabs, .stSelectbox, input, button {
+[data-testid="stSidebar"], .stTabs, .stSelectbox, button {
     font-family: 'Tajawal', sans-serif !important;
+}
+
+/* الأرقام دائماً بالإنجليزية */
+input, [data-testid="stMetricValue"], [data-testid="stNumberInput"] input,
+[data-testid="stMetricDelta"], code, .stSlider [data-testid="stTickBarMin"],
+.stSlider [data-testid="stTickBarMax"], [data-baseweb="input"] input,
+[data-baseweb="base-input"] input, span[data-testid="stMetricValue"] {
+    font-family: 'Inter', 'Arial', sans-serif !important;
+    font-variant-numeric: lining-nums tabular-nums !important;
 }
 
 /* ══ 1. خلفية نمط الماس ═══════════════════════════════════════════════════ */
