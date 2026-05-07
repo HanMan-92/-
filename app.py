@@ -208,9 +208,17 @@ hr { border-color: #CBD5E1 !important; }
 @st.cache_resource
 def load_model():
     try:
-        m = joblib.load("catboost_model.pkl")
+        from huggingface_hub import hf_hub_download
+        path = hf_hub_download(
+            repo_id="Geohanman/asir-gis-dataset",
+            filename="data/catboost_model.pkl",
+            repo_type="dataset",
+            token=st.secrets["HF_TOKEN"]
+        )
+        m = joblib.load(path)
         return m, list(m.feature_names_), True
-    except Exception:
+    except Exception as e:
+        st.warning(f"⚠️ تعذّر تحميل النموذج من Hugging Face: {e}")
         return None, None, False
 
 model, FEATURE_COLS, model_ok = load_model()
@@ -395,6 +403,62 @@ def in_study_area(lat, lng):
 # ══════════════════════════════════════════════════════════════════════════════
 # دوال
 # ══════════════════════════════════════════════════════════════════════════════
+@st.cache_data
+def load_businesses():
+    """يُحمّل بيانات الرخص من Hugging Face ويُخزّنها في الذاكرة"""
+    try:
+        from huggingface_hub import hf_hub_download
+        path = hf_hub_download(
+            repo_id="Geohanman/asir-gis-dataset",
+            filename="data/dataset_complete_final_final.csv",
+            repo_type="dataset",
+            token=st.secrets["HF_TOKEN"]
+        )
+        df = pd.read_csv(path)
+        df = df.dropna(subset=["lat","lng"])
+        df["lat"] = df["lat"].astype(float)
+        df["lng"] = df["lng"].astype(float)
+        return df
+    except Exception as e:
+        st.warning(f"⚠️ تعذّر تحميل بيانات الرخص: {e}")
+        return None
+
+
+def compute_spatial_features(lat0, lng0, category_name, df):
+    """يحسب المتغيرات المكانية الحقيقية من البيانات"""
+    if df is None or len(df) == 0:
+        return None
+    dlat = 500 / 111000
+    dlng = 500 / (111000 * np.cos(np.radians(lat0)) + 1e-10)
+    nearby = df[
+        (df["lat"].between(lat0 - dlat, lat0 + dlat)) &
+        (df["lng"].between(lng0 - dlng, lng0 + dlng))
+    ].copy()
+    if len(nearby) == 0:
+        return None
+    R = 6371000
+    dlat_r = np.radians(nearby["lat"].values - lat0)
+    dlng_r = np.radians(nearby["lng"].values - lng0)
+    a = (np.sin(dlat_r/2)**2 +
+         np.cos(np.radians(lat0)) * np.cos(np.radians(nearby["lat"].values)) *
+         np.sin(dlng_r/2)**2)
+    nearby = nearby.copy()
+    nearby["dist_m"] = R * 2 * np.arcsin(np.sqrt(np.clip(a, 0, 1)))
+    within = nearby[nearby["dist_m"] <= 500]
+    if len(within) == 0:
+        return None
+    hood_rate    = float(within["active"].mean())
+    commercial_n = int(len(within))
+    same = within[within["category"].str.contains(
+        category_name[:6] if len(category_name) >= 6 else category_name,
+        na=False, case=False)]
+    n_comp  = max(len(same) - 1, 0)
+    avg_age = float(same["days_old"].mean()) if len(same) > 0 else float(within["days_old"].mean())
+    dist_d  = float(same.sort_values("dist_m")["dist_m"].iloc[0]) if len(same) > 0 else 200.0
+    return {"hood_rate": hood_rate, "commercial_n": commercial_n,
+            "n_competitors": n_comp, "avg_age": avg_age, "dist_direct": dist_d}
+
+
 def get_elev(lat, lng):
     try:
         r = requests.get(f"https://api.open-elevation.com/api/v1/lookup?locations={lat},{lng}", timeout=6)
