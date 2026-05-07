@@ -171,17 +171,30 @@ st.markdown("<hr style='border-color:rgba(196,18,48,0.4);margin:0.8rem 0 1.5rem;
 # ─────────────────────────────────────────────────────────────────────────────
 # تحميل النموذج
 # ─────────────────────────────────────────────────────────────────────────────
+# الترتيب الثابت للأعمدة — مطابق لما دُرِّب عليه النموذج
+FEATURE_COLS = [
+    "الاحداثي الجغرافي X", "الاحداثي الجغرافي Y",
+    "الارتفاع", "الانحدار",
+    "المسافة_للشارع_الأقرب_لوغ", "المسافة_للطريق_الشرياني_لوغ",
+    "المسافة_لأقرب_معلم_سياحي_لوغ", "رتبة_الطريق",
+    "مؤشر_الحيوية_الحضرية", "كثافة_تجارية_500م_لوغ",
+    "عدد_مباني_فعلي_500م_لوغ", "متوسط_عمر_المنافسين_يوم_لوغ",
+    "عدد_منافسين_مباشرين_500م_لوغ", "مسافة_أقرب_مباشر_متر_لوغ",
+    "المعدل_الجواري", "معدل_إغلاق_الفئة_لوغ",
+    "مساحة_المنشأة_لوغ", "الانتماء_لعلامة_تجارية",
+    "مدة_الرخصة_لوغ", "نوع_المنشأة_TE", "فئة_النشاط_TE",
+]
+
 @st.cache_resource
 def load_model():
     try:
-        model      = joblib.load("catboost_model.pkl")
-        orig_cols  = joblib.load("original_cols.pkl")
-        fill_stats = joblib.load("fill_stats.pkl")
-        return model, orig_cols, fill_stats, True
+        model = joblib.load("catboost_model.pkl")
+        return model, True
     except Exception:
-        return None, None, None, False
+        return None, False
 
-model, original_cols, fill_stats, model_loaded = load_model()
+model, model_loaded = load_model()
+original_cols = FEATURE_COLS
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -392,7 +405,7 @@ with st.sidebar:
 # Main
 # ─────────────────────────────────────────────────────────────────────────────
 if not model_loaded:
-    st.error("⚠️ ملفات النموذج غير موجودة: `catboost_model.pkl` · `original_cols.pkl` · `fill_stats.pkl`")
+    st.error("⚠️ ملف النموذج غير موجود: `catboost_model.pkl`")
     st.stop()
 
 inputs = dict(
@@ -410,7 +423,7 @@ inputs = dict(
     category_te=CATEGORY_TE[category_label],
 )
 
-X_input   = build_feature_vector(inputs)[original_cols]
+X_input   = build_feature_vector(inputs)[FEATURE_COLS]
 prob      = float(model.predict_proba(X_input)[0][1])
 THRESHOLD = 0.65
 
