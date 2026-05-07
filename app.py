@@ -79,15 +79,22 @@ html, body, [class*="css"] {
   gap: 14px;
 }
 .nav-diamond {
-  width: 38px; height: 38px;
+  width: 52px; height: 52px;
   background: linear-gradient(135deg, var(--red), var(--orange));
   transform: rotate(45deg);
-  border-radius: 6px;
+  border-radius: 8px;
   flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(245,130,31,0.4);
 }
 .nav-title { color: white; font-family: 'Cairo', sans-serif; }
-.nav-title h1 { font-size: 1.35rem; font-weight: 900; margin: 0; letter-spacing: 3px; line-height: 1; }
-.nav-title span { font-size: 0.65rem; color: rgba(255,255,255,0.55); letter-spacing: 1px; display: block; margin-top: 2px; }
+.nav-title h1 { font-size: 1.9rem; font-weight: 900; margin: 0; letter-spacing: 5px; line-height: 1.1; }
+.nav-title .subtitle { font-size: 0.72rem; color: rgba(255,255,255,0.5); letter-spacing: 1px; display: block; margin-top: 3px; }
+.nav-title .tag {
+  display: inline-block; font-size: 0.65rem;
+  background: rgba(245,130,31,0.2); border: 1px solid rgba(245,130,31,0.4);
+  color: var(--orange); padding: 1px 8px; border-radius: 10px;
+  letter-spacing: 1px; margin-top: 3px; vertical-align: middle;
+}
 .nav-badge {
   margin-right: auto;
   display: flex; align-items: center; gap: 16px;
@@ -519,8 +526,8 @@ st.markdown(f"""
   <div class="nav-logo">
     <div class="nav-diamond"></div>
     <div class="nav-title">
-      <h1>جدوى</h1>
-      <span>نظام تقييم ملاءمة المواقع التجارية</span>
+      <h1>جدوى &nbsp;<span class="tag">واجهة المستثمر</span></h1>
+      <span class="subtitle">نظام تقييم ملاءمة المواقع التجارية · أبها وخميس مشيط</span>
     </div>
   </div>
   <div class="nav-badge">
@@ -570,7 +577,34 @@ with col_left:
     """, unsafe_allow_html=True)
 
     m = folium.Map(location=[lat, lng], zoom_start=13,
-                   tiles="CartoDB positron", prefer_canvas=True)
+                   tiles=None, prefer_canvas=True)
+
+    # طبقة التضاريس ثلاثية الأبعاد (افتراضي)
+    folium.TileLayer(
+        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}",
+        attr="Esri World Shaded Relief",
+        name="🏔️ تضاريس ثلاثية الأبعاد",
+    ).add_to(m)
+
+    # طبقة الصور الجوية
+    folium.TileLayer(
+        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        attr="Esri World Imagery",
+        name="🛰️ صور جوية",
+    ).add_to(m)
+
+    # طبقة طبوغرافية
+    folium.TileLayer(
+        tiles="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+        attr="OpenTopoMap",
+        name="🗺️ خريطة طبوغرافية",
+    ).add_to(m)
+
+    # طبقة نظيفة
+    folium.TileLayer(
+        tiles="CartoDB positron",
+        name="⬜ خريطة نظيفة",
+    ).add_to(m)
     folium.Marker(
         [lat, lng],
         popup=folium.Popup(f"<b>{lat:.5f} , {lng:.5f}</b>", max_width=160),
@@ -582,6 +616,8 @@ with col_left:
     folium.Circle([lat, lng], radius=1000, color="#0D2240",
                   fill=False, weight=1, dash_array="6",
                   tooltip="نطاق موسّع — 1كم").add_to(m)
+
+    folium.LayerControl(position="topright", collapsed=False).add_to(m)
 
     map_data = st_folium(m, width="100%", height=400, returned_objects=["last_clicked"])
 
