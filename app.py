@@ -142,6 +142,59 @@ label, .stSelectbox label, .stSlider label, .stRadio label,
 
 /* ── فوتر ── */
 .g-footer { background: #071626; padding: 0.9rem 2rem; display: flex; align-items: center; justify-content: space-between; margin-top: 2rem; }
+
+/* ── Hero vivid ── */
+.judwa-hero {
+  background: linear-gradient(135deg, #071626 0%, #0F2545 50%, #1A0A0A 100%);
+  padding: 2.5rem 2rem 2rem;
+  direction: rtl; text-align: right;
+  position: relative;
+}
+.judwa-hero::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    -55deg,
+    transparent,
+    transparent 40px,
+    rgba(185,28,28,0.04) 40px,
+    rgba(185,28,28,0.04) 41px
+  );
+  pointer-events: none;
+}
+.hero-badge-v {
+  display: inline-block;
+  background: rgba(185,28,28,0.3);
+  border: 1px solid rgba(185,28,28,0.6);
+  color: #FCA5A5;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 3px; padding: 5px 16px;
+  border-radius: 4px; margin-bottom: 1.3rem;
+  font-family: 'Cairo', sans-serif;
+}
+.hero-title-v {
+  font-size: 3.2rem !important; font-weight: 900 !important;
+  color: #FFFFFF !important; line-height: 1.15 !important;
+  font-family: 'Cairo', sans-serif !important;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+  margin: 0 0 0.4rem !important;
+}
+.hero-title-v span {
+  color: rgba(255,255,255,0.38) !important;
+  font-weight: 400 !important; font-size: 2rem !important;
+}
+.hero-line-v {
+  width: 56px; height: 4px;
+  background: linear-gradient(90deg, #B91C1C, #F87171);
+  margin: 0.7rem 0 1.1rem; border-radius: 2px;
+}
+.hero-sub-v {
+  color: rgba(255,255,255,0.6) !important;
+  font-size: 0.95rem !important;
+  font-family: 'Cairo', sans-serif !important;
+  margin: 0 0 0.3rem !important;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
 .g-footer span { color: rgba(255,255,255,0.3); font-size: 12px; font-family: 'Cairo', sans-serif; }
 .g-footer strong { color: rgba(255,255,255,0.6); font-family: 'Cairo', sans-serif; font-size: 13px; }
 
@@ -512,27 +565,14 @@ st.markdown(
 )
 
 st.markdown(
-    "<div style='"
-    "background-image:linear-gradient(135deg,rgba(7,22,38,0.82) 0%,rgba(13,34,64,0.75) 100%),"
-    "url('https://www.image2url.com/r2/default/images/1778178822503-d84153de-2dca-4f74-997d-627835b26bed.png');"
-    "background-size:cover;background-position:center;"
-    "padding:2.5rem 2rem 2rem;direction:rtl;text-align:right;'>"
-    "<div style='display:inline-block;background:rgba(185,28,28,0.2);"
-    "border:1px solid rgba(185,28,28,0.4);"
-    "color:rgba(255,255,255,0.8);font-size:10px;font-weight:700;letter-spacing:2px;"
-    "padding:4px 14px;border-radius:4px;margin-bottom:1.2rem;"
-    "font-family:Cairo,sans-serif;'>"
-    "GEOXAI · SITE INTELLIGENCE · ASEER</div>"
-    "<div style='font-size:2.8rem;font-weight:900;color:white;"
-    "margin:0 0 0.3rem;line-height:1.2;font-family:Cairo,sans-serif;"
-    "text-align:right;direction:rtl;'>"
+    "<div class='judwa-hero'>"
+    "<div class='hero-badge-v'>GEOXAI · SITE INTELLIGENCE · ASEER</div>"
+    "<div class='hero-title-v'>"
     "جدوى "
-    "<span style='color:rgba(255,255,255,0.38);font-weight:400;font-size:1.9rem;"
-    "font-family:Cairo,sans-serif;'>— مرشد الاستثمار التجاري</span>"
+    "<span>— مرشد الاستثمار التجاري</span>"
     "</div>"
-    "<div style='width:48px;height:3px;background:#B91C1C;margin:0.7rem 0 1rem;margin-right:0;'></div>"
-    "<div style='color:rgba(255,255,255,0.55);font-size:0.9rem;margin:0 0 0.5rem;"
-    "font-family:Cairo,sans-serif;text-align:right;'>"
+    "<div class='hero-line-v'></div>"
+    "<div class='hero-sub-v'>"
     "منصة تحليلية للتنبؤ باستدامة المشاريع التجارية في أبها وخميس مشيط — منطقة عسير"
     "</div>"
     "</div>",
@@ -543,10 +583,10 @@ st.markdown(
 _sc1, _sc2, _sc3, _sc4 = st.columns(4)
 def _stat_card(col, val, label, sub):
     col.markdown(
-        "<div style='background:#0D2240;border:1px solid rgba(255,255,255,0.08);"
+        "<div style='background:linear-gradient(135deg,#0D2240,#1A0A1A);border:1px solid rgba(185,28,28,0.3);"
         "border-radius:10px;padding:1rem 1.2rem;margin-bottom:0.5rem;'>"
         "<div style='font-family:IBM Plex Mono,monospace;font-size:1.9rem;font-weight:600;"
-        "color:white;line-height:1;'>" + val + "</div>"
+        "color:#FFFFFF;line-height:1;text-shadow:0 0 20px rgba(185,28,28,0.4);'>" + val + "</div>"
         "<div style='font-size:11px;color:rgba(255,255,255,0.45);margin-top:4px;'>" + label + "</div>"
         "<div style='font-size:10px;color:rgba(255,255,255,0.22);margin-top:2px;'>" + sub + "</div>"
         "</div>",
