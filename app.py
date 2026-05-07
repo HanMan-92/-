@@ -305,7 +305,7 @@ def llm_explain(prob, elev, area_v, category, pos_r, neg_r, verdict, cv=None):
     يولد تفسيرا نصيا غنيا بالمتغيرات الفعلية: المنافسين، الكثافة،
     معدل الاغلاق، نوع الشارع — مستنداً لقيم SHAP الحقيقية.
     """
-    pct        = str(int(prob * 100))
+    pct        = str(int(round(prob * 100)))
     verdict_ar = "ملائم" if verdict else "غير ملائم"
     opp_ar     = "واعدة" if verdict else "محدودة"
     cv = cv or {}
@@ -697,7 +697,7 @@ with col_res:
         fv     = pd.DataFrame(R["fv"], columns=FEATURE_COLS)
         v      = prob >= 0.65
         cls    = "ok" if v else "bad"
-        pct    = str(int(prob * 100))
+        pct    = str(int(round(prob * 100)))
 
         # ── مقياس النسبة ────────────────────────────────────────────────────
         vt     = "الموقع ملائم للاستثمار" if v else "الموقع غير ملائم"
@@ -733,7 +733,7 @@ with col_res:
         # ── Gauge ────────────────────────────────────────────────────────────
         fig = go.Figure(go.Indicator(
             mode="gauge+number",
-            value=round(prob*100, 1),
+            value=int(round(prob*100)),
             number={"suffix":"%","font":{"size":30,"family":"IBM Plex Mono",
                     "color": "#059669" if v else "#B91C1C"}},
             gauge={"axis":{"range":[0,100],"tickfont":{"size":9,"color":"#94A3B8"}},
