@@ -669,102 +669,62 @@ lng = st.session_state["lng"]
 # ══════════════════════════════════════════════════════════════════════════════
 # HERO
 # ══════════════════════════════════════════════════════════════════════════════
-st.markdown("""
-<div style="
-  background:linear-gradient(135deg,#071626 0%,#0D2240 60%,#0A1E35 100%);
-  position:relative;overflow:hidden;
-">
-  <!-- شريط التنقل مدمج مع الـ Hero -->
-  <div style="
-    display:flex;align-items:center;padding:0 2rem;height:56px;
-    border-bottom:2px solid #B91C1C;
-    background:rgba(0,0,0,0.2);
-  ">
-    <div style="
-      width:34px;height:34px;flex-shrink:0;
-      background:linear-gradient(135deg,#B91C1C,#DC2626);
-      transform:rotate(45deg);border-radius:4px;
-    "></div>
-    <div style="margin-right:14px;">
-      <span style="
-        font-family:'Cairo',sans-serif;font-size:1.2rem;
-        font-weight:900;color:white;letter-spacing:3px;
-      ">جدوى</span>
-      <span style="
-        font-family:'Cairo',sans-serif;font-size:0.62rem;
-        color:rgba(255,255,255,0.4);margin-right:8px;letter-spacing:1px;
-      ">مرشد الاستثمار التجاري</span>
-    </div>
-    <div style="flex:1;"></div>
-    <span style="
-      font-family:'Cairo',sans-serif;
-      color:rgba(255,255,255,0.45);font-size:0.78rem;
-      padding-left:14px;border-left:1px solid rgba(255,255,255,0.1);
-    ">أمانة منطقة عسير</span>
-    <div style="
-      margin-left:12px;display:flex;align-items:center;gap:6px;
-      color:rgba(255,255,255,0.7);font-size:0.72rem;
-      background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);
-      padding:3px 10px;border-radius:20px;font-family:'Cairo',sans-serif;
-    ">
-      <span style="width:6px;height:6px;border-radius:50%;background:#22C55E;display:inline-block;"></span>
-      النظام فعّال
-    </div>
-  </div>
+# Hero — مقسّم إلى وحدات بسيطة لضمان العرض الصحيح
+st.markdown(
+    "<div style='background:#071626;border-bottom:2px solid #B91C1C;'>"
+    "<div style='display:flex;align-items:center;padding:0 2rem;height:54px;background:rgba(0,0,0,0.25);'>"
+    "<div style='width:32px;height:32px;background:linear-gradient(135deg,#B91C1C,#DC2626);"
+    "transform:rotate(45deg);border-radius:4px;flex-shrink:0;'></div>"
+    "<span style='margin-right:14px;font-size:1.3rem;font-weight:900;color:white;letter-spacing:3px;'>جدوى</span>"
+    "<span style='font-size:0.65rem;color:rgba(255,255,255,0.4);margin-right:6px;'>مرشد الاستثمار التجاري</span>"
+    "<div style='flex:1;'></div>"
+    "<span style='color:rgba(255,255,255,0.4);font-size:0.75rem;padding-left:12px;"
+    "border-left:1px solid rgba(255,255,255,0.1);'>أمانة منطقة عسير</span>"
+    "<span style='margin-left:10px;display:flex;align-items:center;gap:5px;"
+    "color:rgba(255,255,255,0.65);font-size:0.72rem;background:rgba(255,255,255,0.07);"
+    "border:1px solid rgba(255,255,255,0.1);padding:3px 10px;border-radius:20px;'>"
+    "<span style='width:6px;height:6px;border-radius:50%;background:#22C55E;display:inline-block;'></span>"
+    "النظام فعّال</span>"
+    "</div></div>",
+    unsafe_allow_html=True,
+)
 
-  <!-- محتوى الـ Hero -->
-  <div style="padding:2.5rem 2rem 2rem;position:relative;z-index:1;">
-    <div style="
-      display:inline-block;
-      background:rgba(185,28,28,0.2);border:1px solid rgba(185,28,28,0.4);
-      color:rgba(255,255,255,0.7);font-size:10px;font-weight:700;
-      letter-spacing:2px;padding:4px 12px;border-radius:4px;
-      font-family:'Cairo',sans-serif;margin-bottom:1rem;
-    ">GEOXAI · SITE INTELLIGENCE · ASEER</div>
+st.markdown(
+    "<div style='background:linear-gradient(135deg,#071626,#0D2240);padding:2rem 2rem 1.8rem;'>"
+    "<div style='display:inline-block;background:rgba(185,28,28,0.2);border:1px solid rgba(185,28,28,0.4);"
+    "color:rgba(255,255,255,0.7);font-size:10px;font-weight:700;letter-spacing:2px;"
+    "padding:4px 12px;border-radius:4px;margin-bottom:1rem;'>GEOXAI · SITE INTELLIGENCE · ASEER</div>"
+    "<div style='font-size:2.6rem;font-weight:900;color:white;margin:0 0 0.3rem;line-height:1.2;'>"
+    "جدوى <span style='color:rgba(255,255,255,0.32);font-weight:400;font-size:1.8rem;'>— مرشد الاستثمار التجاري</span>"
+    "</div>"
+    "<div style='width:48px;height:3px;background:#B91C1C;margin:0.6rem 0 1rem;'></div>"
+    "<div style='color:rgba(255,255,255,0.45);font-size:0.88rem;margin:0 0 1.5rem;'>"
+    "منصة تحليلية للتنبؤ باستدامة المشاريع التجارية في أبها وخميس مشيط — منطقة عسير"
+    "</div>"
+    "</div>",
+    unsafe_allow_html=True,
+)
 
-    <h1 style="
-      font-family:'Cairo',sans-serif !important;
-      font-size:2.8rem !important;font-weight:900 !important;
-      color:white !important;margin:0 0 0.3rem !important;
-      line-height:1.2 !important;letter-spacing:1px !important;
-    ">جدوى
-      <span style="color:rgba(255,255,255,0.35);font-weight:400;font-size:2rem;">
-        — مرشد الاستثمار التجاري
-      </span>
-    </h1>
+# بطاقات الإحصاء — 4 أعمدة
+_sc1, _sc2, _sc3, _sc4 = st.columns(4)
+def _stat_card(col, val, label, sub):
+    col.markdown(
+        "<div style='background:#0D2240;border:1px solid rgba(255,255,255,0.08);"
+        "border-radius:10px;padding:1rem 1.2rem;margin-bottom:0.5rem;'>"
+        "<div style='font-family:IBM Plex Mono,monospace;font-size:1.9rem;font-weight:600;"
+        "color:white;line-height:1;'>" + val + "</div>"
+        "<div style='font-size:11px;color:rgba(255,255,255,0.45);margin-top:4px;'>" + label + "</div>"
+        "<div style='font-size:10px;color:rgba(255,255,255,0.22);margin-top:2px;'>" + sub + "</div>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
-    <div style="width:50px;height:3px;background:linear-gradient(90deg,#B91C1C,transparent);margin:0.7rem 0 1.2rem;"></div>
+_stat_card(_sc1, "21",     "متغيراً تحليلياً",    "جغرافية · حضرية · تنافسية")
+_stat_card(_sc2, "0.81",   "دقة النموذج (AUC)",   "تحقق زمني · CatBoost")
+_stat_card(_sc3, "22,917", "رخصة تجارية",          "بيانات رسمية · أمانة عسير")
+_stat_card(_sc4, "F0.5",   "مقياس الأداء",          "يُغلِّب الدقة على الاسترجاع")
 
-    <p style="
-      color:rgba(255,255,255,0.5);font-size:0.9rem;margin:0 0 1.8rem;
-      font-family:'Cairo',sans-serif;
-    ">منصة تحليلية للتنبؤ باستدامة المشاريع التجارية في أبها وخميس مشيط — منطقة عسير</p>
 
-    <div style="display:flex;gap:1.2rem;flex-wrap:wrap;">
-      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:1rem 1.3rem;min-width:140px;">
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:1.9rem;font-weight:600;color:white;display:block;line-height:1;">21</span>
-        <span style="font-size:11px;color:rgba(255,255,255,0.45);font-family:'Cairo',sans-serif;display:block;margin-top:3px;">متغيراً تحليلياً</span>
-        <span style="font-size:10px;color:rgba(255,255,255,0.22);font-family:'Cairo',sans-serif;display:block;margin-top:1px;">جغرافية · حضرية · تنافسية</span>
-      </div>
-      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:1rem 1.3rem;min-width:140px;">
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:1.9rem;font-weight:600;color:white;display:block;line-height:1;">0.81</span>
-        <span style="font-size:11px;color:rgba(255,255,255,0.45);font-family:'Cairo',sans-serif;display:block;margin-top:3px;">دقة النموذج (AUC)</span>
-        <span style="font-size:10px;color:rgba(255,255,255,0.22);font-family:'Cairo',sans-serif;display:block;margin-top:1px;">تحقق زمني · CatBoost</span>
-      </div>
-      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:1rem 1.3rem;min-width:140px;">
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:1.9rem;font-weight:600;color:white;display:block;line-height:1;">22,917</span>
-        <span style="font-size:11px;color:rgba(255,255,255,0.45);font-family:'Cairo',sans-serif;display:block;margin-top:3px;">رخصة تجارية</span>
-        <span style="font-size:10px;color:rgba(255,255,255,0.22);font-family:'Cairo',sans-serif;display:block;margin-top:1px;">بيانات رسمية · أمانة عسير</span>
-      </div>
-      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:1rem 1.3rem;min-width:140px;">
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:1.9rem;font-weight:600;color:white;display:block;line-height:1;">F0.5</span>
-        <span style="font-size:11px;color:rgba(255,255,255,0.45);font-family:'Cairo',sans-serif;display:block;margin-top:3px;">مقياس الأداء</span>
-        <span style="font-size:10px;color:rgba(255,255,255,0.22);font-family:'Cairo',sans-serif;display:block;margin-top:1px;">يُغلِّب الدقة على الاسترجاع</span>
-      </div>
-    </div>
-  </div>
-</div>
-""", unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # كيف تعمل المنصة
