@@ -22,355 +22,128 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap');
 
-/* فرض خط Cairo على كل عنصر في الصفحة */
-*, *::before, *::after {
-  font-family: 'Cairo', 'Arial', sans-serif !important;
-}
-input, code, pre, .stCodeBlock, [data-testid="stMetricValue"],
-.g-coord-chip, .hero-stat-v, .res-num, .res-item-v, .stat-v {
-  font-family: 'IBM Plex Mono', 'Courier New', monospace !important;
-}
+/* ── اتجاه RTL فقط على الحاويات الرئيسية ── */
+html, body { direction: rtl; }
+[class*="css"] { direction: rtl; }
+.main .block-container { direction: rtl; }
 
-/* ── إصلاح حقل المساحة (number_input) في وضع RTL ── */
-[data-testid="stNumberInput"] {
-  direction: ltr !important;
-}
-[data-testid="stNumberInput"] input {
-  direction: ltr !important;
-  text-align: right !important;
-  font-family: 'IBM Plex Mono', monospace !important;
-}
-[data-testid="stNumberInputStepDown"],
-[data-testid="stNumberInputStepUp"] {
-  pointer-events: all !important;
-  cursor: pointer !important;
-  z-index: 10 !important;
-  position: relative !important;
-}
-button[data-testid="stNumberInputStepDown"],
-button[data-testid="stNumberInputStepUp"] {
-  background: rgba(185,28,28,0.08) !important;
-  border: 1px solid #CBD5E1 !important;
-  border-radius: 6px !important;
-  color: #B91C1C !important;
-  font-weight: 700 !important;
-}
+/* ── خط Cairo للنصوص العربية فقط ── */
+.stMarkdown, .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+label, .stSelectbox label, .stSlider label, .stRadio label,
+.stButton > button span, p { font-family: 'Cairo', Arial, sans-serif !important; }
 
-:root {
-  --navy:    #071626;
-  --navy2:   #0D2240;
-  --cream:   #F5F2EB;
-  --cream2:  #EDE9DF;
-  --red:     #B91C1C;
-  --gold:    #92400E;
-  --white:   #FFFFFF;
-  --border:  #D6CFC0;
-  --text:    #1A1208;
-  --muted:   #6B6355;
-  --green:   #065F46;
-  --sh: 0 1px 4px rgba(0,0,0,0.07), 0 4px 20px rgba(0,0,0,0.05);
-}
-
-html, body, [class*="css"] {
-  direction: rtl;
-  font-family: 'Cairo', sans-serif !important;
-}
-
-/* خلفية كريمية */
-.stApp { background: var(--cream); }
-.main .block-container { padding: 0 !important; max-width: 100% !important; }
-
-/* إخفاء Streamlit الافتراضي */
+/* ── إخفاء عناصر Streamlit الافتراضية ── */
 #MainMenu, footer, header,
 [data-testid="stToolbar"], .stDeployButton { display: none !important; }
 
-/* ═══════════ SIDEBAR ═══════════ */
+/* ── الخلفية ── */
+.stApp { background: #F1F5F9; }
+.main .block-container { padding: 0 !important; max-width: 100% !important; }
+
+/* ── الشريط الجانبي ── */
 [data-testid="stSidebar"] {
-  background: var(--navy) !important;
-  border-left: none !important;
-  min-width: 280px !important;
+    background: #071626 !important;
+    min-width: 280px !important;
 }
 [data-testid="stSidebarContent"] { padding: 1.5rem 1.2rem !important; }
+[data-testid="stSidebar"] label { color: rgba(255,255,255,0.65) !important; font-size: 12px !important; font-weight: 600 !important; font-family: 'Cairo', sans-serif !important; }
+[data-testid="stSidebar"] p    { color: rgba(255,255,255,0.5) !important; font-family: 'Cairo', sans-serif !important; }
 
-/* شعار الشريط الجانبي */
-.sb-logo {
-  display: flex; align-items: center; gap: 12px;
-  padding-bottom: 1.2rem;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  margin-bottom: 1.4rem;
+/* ── مدخلات الشريط الجانبي ── */
+[data-testid="stSidebar"] [data-baseweb="select"] > div {
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    border-radius: 8px !important; color: white !important;
+    font-family: 'Cairo', sans-serif !important;
 }
-.sb-diamond {
-  width: 38px; height: 38px; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--red), #DC2626);
-  transform: rotate(45deg); border-radius: 5px;
-}
-.sb-name {
-  color: white; font-family: 'Cairo', sans-serif;
-}
-.sb-name h2 { font-size: 1.4rem; font-weight: 900; margin: 0; letter-spacing: 2px; line-height: 1; }
-.sb-name p  { font-size: 0.62rem; color: rgba(255,255,255,0.4); margin: 3px 0 0; letter-spacing: 0.5px; }
+[data-testid="stSidebar"] [data-baseweb="select"] * { color: white !important; }
 
-/* عناوين الأقسام */
-.sb-section {
-  font-size: 10px; font-weight: 700; letter-spacing: 2px;
-  color: rgba(255,255,255,0.35); text-transform: uppercase;
-  margin: 1.2rem 0 0.5rem;
+/* ── حقل المساحة: يعمل في كل الاتجاهات ── */
+[data-testid="stNumberInput"] { direction: ltr !important; }
+[data-testid="stNumberInput"] > div { direction: ltr !important; }
+[data-testid="stNumberInput"] input {
+    direction: ltr !important; text-align: right !important;
+    font-family: 'IBM Plex Mono', monospace !important;
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    border-radius: 8px !important; color: white !important;
 }
-
-/* مدخلات الشريط الجانبي */
-[data-testid="stSidebar"] label {
-  color: rgba(255,255,255,0.6) !important;
-  font-size: 12px !important; font-weight: 600 !important;
-}
-[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div {
-  background: rgba(255,255,255,0.07) !important;
-  border: 1px solid rgba(255,255,255,0.12) !important;
-  border-radius: 8px !important; color: white !important;
-}
-[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div:hover {
-  border-color: rgba(185,28,28,0.6) !important;
-}
-[data-testid="stSidebar"] .stRadio label { color: rgba(255,255,255,0.7) !important; }
-[data-testid="stSidebar"] input { color: white !important; }
-[data-testid="stSidebar"] p { color: rgba(255,255,255,0.6) !important; }
-
-/* slider في الشريط الجانبي */
-[data-testid="stSidebar"] .stSlider [data-baseweb="slider"] > div:nth-child(3) {
-  background: var(--red) !important;
-}
-[data-testid="stSidebar"] .stSlider [data-baseweb="thumb"] {
-  background: white !important; border: 2.5px solid var(--red) !important;
-}
-[data-testid="stSidebar"] [data-testid="stSliderTickBarMin"],
-[data-testid="stSidebar"] [data-testid="stSliderTickBarMax"] {
-  color: rgba(255,255,255,0.4) !important;
-  font-family: 'IBM Plex Mono', monospace !important;
+[data-testid="stSidebar"] button[data-testid="stNumberInputStepUp"],
+[data-testid="stSidebar"] button[data-testid="stNumberInputStepDown"] {
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    color: white !important; border-radius: 6px !important;
+    font-size: 14px !important;
 }
 
-/* زر التحليل */
+/* ── Slider ── */
+[data-testid="stSidebar"] .stSlider [data-baseweb="slider"] > div:nth-child(3) { background: #B91C1C !important; }
+[data-testid="stSidebar"] .stSlider [data-baseweb="thumb"] { background: white !important; border: 2.5px solid #B91C1C !important; }
+
+/* ── Radio ── */
+[data-testid="stSidebar"] .stRadio label { color: rgba(255,255,255,0.7) !important; font-family: 'Cairo', sans-serif !important; }
+
+/* ── زر التحليل الرئيسي ── */
 [data-testid="stSidebar"] .stButton > button {
-  background: var(--red) !important; color: white !important;
-  border: none !important; border-radius: 10px !important;
-  font-weight: 700 !important; font-size: 14px !important;
-  padding: 0.65rem 1.5rem !important; width: 100% !important;
-  font-family: 'Cairo', sans-serif !important;
-  box-shadow: 0 3px 12px rgba(185,28,28,0.4) !important;
-  transition: all .25s !important; margin-top: 0.5rem !important;
+    background: #B91C1C !important; color: white !important;
+    border: none !important; border-radius: 10px !important;
+    font-weight: 700 !important; font-size: 15px !important;
+    padding: 0.65rem 1.5rem !important; width: 100% !important;
+    font-family: 'Cairo', sans-serif !important;
+    box-shadow: 0 3px 12px rgba(185,28,28,0.35) !important;
+    cursor: pointer !important;
 }
 [data-testid="stSidebar"] .stButton > button:hover {
-  background: #991B1B !important; transform: translateY(-1px) !important;
+    background: #991B1B !important; transform: translateY(-1px) !important;
 }
 
-/* زر المنطقة الرئيسية */
+/* ── أزرار المنطقة الرئيسية ── */
 .main .stButton > button {
-  background: transparent !important; color: var(--red) !important;
-  border: 1.5px solid var(--red) !important; border-radius: 8px !important;
-  font-weight: 600 !important; font-size: 13px !important;
-  padding: 0.4rem 1.2rem !important;
-  font-family: 'Cairo', sans-serif !important;
-  transition: all .2s !important;
+    background: transparent !important; color: #B91C1C !important;
+    border: 1.5px solid #B91C1C !important; border-radius: 8px !important;
+    font-family: 'Cairo', sans-serif !important; cursor: pointer !important;
 }
-.main .stButton > button:hover {
-  background: var(--red) !important; color: white !important;
-}
+.main .stButton > button:hover { background: #B91C1C !important; color: white !important; }
 
-/* ═══════════ HERO ═══════════ */
-.hero {
-  background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 60%, #0A1E35 100%);
-  padding: 3rem 3rem 2.5rem;
-  position: relative; overflow: hidden;
-}
-.hero::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpolygon points='30,2 58,30 30,58 2,30' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-}
-.hero-badge {
-  display: inline-block;
-  background: rgba(185,28,28,0.2); border: 1px solid rgba(185,28,28,0.4);
-  color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 700;
-  letter-spacing: 2px; padding: 5px 14px; border-radius: 4px;
-  font-family: 'Cairo', sans-serif;
-  margin-bottom: 1.2rem;
-}
-.hero h1 {
-  font-family: 'Cairo', sans-serif !important;
-  font-size: 3.2rem !important; font-weight: 900 !important;
-  color: white !important; margin: 0 0 0.4rem !important;
-  line-height: 1.1 !important; letter-spacing: 1px !important;
-}
-.hero h1 span { color: rgba(255,255,255,0.35); font-weight: 400; font-size: 2.2rem; }
-.hero-sub {
-  color: rgba(255,255,255,0.5); font-size: 0.95rem; margin: 0 0 2rem;
-}
-.hero-divider {
-  width: 60px; height: 3px;
-  background: linear-gradient(90deg, var(--red), transparent);
-  margin: 0.8rem 0 1.8rem;
-}
+/* ── زر التثبيت ── */
+.main .stButton > button[data-testid] { cursor: pointer !important; }
 
-/* بطاقات الإحصاء في الـ hero */
-.hero-stats { display: flex; gap: 1.5rem; flex-wrap: wrap; }
-.hero-stat {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px; padding: 1rem 1.4rem;
-  min-width: 160px;
-}
-.hero-stat-v {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 2rem; font-weight: 600; color: white;
-  display: block; line-height: 1;
-}
-.hero-stat-l { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 4px; display: block; }
-.hero-stat-s { font-size: 10px; color: rgba(255,255,255,0.25); display: block; margin-top: 2px; }
+/* ── بطاقات الإحصاء ── */
+.stat-c { background: white; border-radius: 10px; border: 1px solid #CBD5E1; padding: 1rem; text-align: center; border-top: 3px solid #B91C1C; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.stat-v { font-family: 'IBM Plex Mono', monospace; font-size: 1.5rem; font-weight: 700; color: #0F172A; }
+.stat-l { font-size: 11px; color: #64748B; margin-top: 3px; }
 
-/* ═══════════ كيف تعمل المنصة ═══════════ */
-.how-section {
-  background: var(--cream2); padding: 1.8rem 3rem;
-  border-bottom: 1px solid var(--border);
-}
-.how-title {
-  font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700;
-  color: var(--muted); text-transform: uppercase; letter-spacing: 2px;
-  margin: 0 0 1.2rem; display: flex; align-items: center; gap: 8px;
-}
-.how-title::before {
-  content: ''; display: inline-block;
-  width: 16px; height: 3px; background: var(--red);
-}
-.how-steps { display: flex; gap: 0; align-items: stretch; }
-.how-step {
-  flex: 1; padding: 1.2rem 1.5rem;
-  background: white; border: 1px solid var(--border); border-radius: 10px;
-  margin-left: 1rem; position: relative;
-}
-.how-step:last-child { margin-left: 0; }
-.how-num {
-  font-family: 'IBM Plex Mono', monospace; font-size: 2rem;
-  font-weight: 700; color: rgba(185,28,28,0.12); line-height: 1;
-  margin-bottom: 0.5rem;
-}
-.how-step h4 { font-family: 'Cairo',sans-serif; font-size: 14px; font-weight: 700; color: var(--text); margin: 0 0 4px; }
-.how-step p  { font-size: 12px; color: var(--muted); margin: 0; line-height: 1.5; }
+/* ── XAI ── */
+.xai-card { background: white; border-radius: 12px; border: 1px solid #CBD5E1; padding: 1.4rem; }
+.xai-head-title { font-family: 'Cairo', sans-serif; font-size: 15px; font-weight: 700; color: #0F172A; margin: 0 0 4px; }
+.xai-track { height: 6px; background: #F1F5F9; border-radius: 3px; overflow: hidden; }
+.xai-fill { height: 100%; border-radius: 3px; }
+.xai-fill.pos { background: linear-gradient(90deg,#059669,#6EE7B7); }
+.xai-fill.neg { background: linear-gradient(90deg,#B91C1C,#FCA5A5); }
+.xai-fill.neu { background: linear-gradient(90deg,#D97706,#FDE68A); }
 
-/* ═══════════ المنطقة الرئيسية ═══════════ */
-.main-body { padding: 1.8rem 3rem; }
+/* ── كيف تعمل المنصة ── */
+.how-section { background: #E8ECF2; padding: 1.6rem 2rem; border-bottom: 1px solid #CBD5E1; }
+.how-title { font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 700; color: #64748B; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 1rem; }
+.how-step { background: white; border-radius: 10px; border: 1px solid #CBD5E1; padding: 1.1rem 1.3rem; }
+.how-num { font-family: 'IBM Plex Mono', monospace; font-size: 1.8rem; font-weight: 700; color: rgba(185,28,28,0.12); }
+.how-step h4 { font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700; color: #0F172A; margin: 0 0 3px; }
+.how-step p  { font-size: 12px; color: #64748B; margin: 0; line-height: 1.5; font-family: 'Cairo', sans-serif; }
 
-/* قسم الخريطة */
-.map-section-head {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 1rem;
-}
-.section-label {
-  font-family: 'Cairo',sans-serif; font-size: 15px; font-weight: 700;
-  color: var(--text); display: flex; align-items: center; gap: 8px;
-}
-.section-label::before {
-  content: ''; width: 4px; height: 18px;
-  background: var(--red); border-radius: 2px; display: inline-block;
-}
+/* ── الإحداثيات ── */
+.coord-chip { background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 6px; padding: 4px 10px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #0F172A; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
 
-/* بطاقة الخريطة */
-.map-card {
-  background: white; border-radius: 12px;
-  border: 1px solid var(--border); box-shadow: var(--sh); overflow: hidden;
-}
-.map-tile-bar {
-  padding: 0.7rem 1rem; border-bottom: 1px solid var(--border);
-  background: #FAFAF8; display: flex; align-items: center; gap: 8px;
-}
-.map-tile-label { font-size: 12px; color: var(--muted); font-weight: 600; flex-shrink: 0; }
+/* ── Metrics ── */
+[data-testid="stMetric"] { background: white !important; border: 1px solid #CBD5E1 !important; border-top: 4px solid #B91C1C !important; border-radius: 12px !important; padding: 1rem !important; }
+[data-testid="stMetricValue"] { font-family: 'IBM Plex Mono', monospace !important; color: #0F172A !important; }
+[data-testid="stMetricLabel"] { color: #64748B !important; font-family: 'Cairo', sans-serif !important; }
 
-/* الإحداثيات */
-.coord-bar {
-  padding: 0.7rem 1rem; display: flex; gap: 8px;
-  border-top: 1px solid var(--border); background: #FAFAF8;
-}
-.coord-chip {
-  background: white; border: 1px solid var(--border);
-  border-radius: 6px; padding: 4px 10px;
-  font-family: 'IBM Plex Mono', monospace; font-size: 12px;
-  color: var(--text); font-weight: 600;
-  display: flex; align-items: center; gap: 5px;
-}
-.coord-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--red); }
+/* ── فوتر ── */
+.g-footer { background: #071626; padding: 0.9rem 2rem; display: flex; align-items: center; justify-content: space-between; margin-top: 2rem; }
+.g-footer span { color: rgba(255,255,255,0.3); font-size: 12px; font-family: 'Cairo', sans-serif; }
+.g-footer strong { color: rgba(255,255,255,0.6); font-family: 'Cairo', sans-serif; font-size: 13px; }
 
-/* ═══════════ النتائج ═══════════ */
-.results-section { margin-top: 2rem; }
-
-/* بطاقة النتيجة الرئيسية */
-.res-hero {
-  background: var(--navy);
-  border-radius: 12px; padding: 2rem;
-  position: relative; overflow: hidden;
-  margin-bottom: 1.2rem;
-}
-.res-verdict {
-  font-size: 12px; font-weight: 700; letter-spacing: 1px;
-  padding: 4px 12px; border-radius: 4px; display: inline-block;
-  margin-bottom: 0.8rem; font-family: 'Cairo', sans-serif;
-}
-.res-verdict.ok  { background: rgba(5,150,105,0.2); color: #6EE7B7; border: 1px solid rgba(6,95,70,0.4); }
-.res-verdict.bad { background: rgba(185,28,28,0.2); color: #FCA5A5; border: 1px solid rgba(185,28,28,0.4); }
-.res-num { font-family: 'Cairo',sans-serif; font-size: 5rem; font-weight: 900; line-height: 1; margin: 0; }
-.res-num.ok  { color: #6EE7B7; }
-.res-num.bad { color: #FCA5A5; }
-.res-caption { color: rgba(255,255,255,0.35); font-size: 13px; margin: 4px 0 1.2rem; }
-.res-row { display: flex; gap: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); }
-.res-item-l { font-size: 11px; color: rgba(255,255,255,0.3); display: block; }
-.res-item-v { font-family: 'IBM Plex Mono',monospace; color: white; font-size: 1rem; font-weight: 600; }
-
-/* بطاقة XAI */
-.xai-card {
-  background: white; border-radius: 12px;
-  border: 1px solid var(--border); box-shadow: var(--sh);
-  padding: 1.5rem; margin-bottom: 1rem;
-}
-.xai-head-title { font-family:'Cairo',sans-serif; font-size:15px; font-weight:700; color:var(--text); margin:0 0 3px; }
-.xai-head-sub   { font-size:12px; color:var(--muted); margin:0 0 1.2rem; }
-.xai-row { margin-bottom: 1.1rem; }
-.xai-rh  { display:flex; align-items:center; margin-bottom:5px; gap:6px; }
-.xai-fname { font-size:13px; font-weight:600; color:var(--text); flex:1; }
-.xai-fval  { font-size:11px; font-family:'IBM Plex Mono',monospace; color:var(--muted); }
-.xai-badge { font-size:10px; padding:2px 8px; border-radius:4px; font-weight:700; }
-.xai-badge.pos { background:#ECFDF5; color:#065F46; border:1px solid #A7F3D0; }
-.xai-badge.neg { background:#FEF2F2; color:#B91C1C; border:1px solid #FECACA; }
-.xai-badge.neu { background:#FFFBEB; color:#92400E; border:1px solid #FDE68A; }
-.xai-track { height:6px; background:var(--cream2); border-radius:3px; overflow:hidden; }
-.xai-fill { height:100%; border-radius:3px; }
-.xai-fill.pos { background:linear-gradient(90deg,#059669,#6EE7B7); }
-.xai-fill.neg { background:linear-gradient(90deg,#B91C1C,#FCA5A5); }
-.xai-fill.neu { background:linear-gradient(90deg,#D97706,#FDE68A); }
-
-/* شبكة الإحصاء الصغيرة */
-.stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:0.8rem; margin-top:1rem; }
-.stat-c { background:white; border-radius:10px; border:1px solid var(--border); box-shadow:var(--sh); padding:1rem; text-align:center; border-top:3px solid var(--red); }
-.stat-v { font-size:1.5rem; font-weight:700; font-family:'IBM Plex Mono',monospace; color:var(--text); display:block; }
-.stat-l { font-size:11px; color:var(--muted); display:block; margin-top:3px; }
-
-/* معالجة */
-.proc-card { background:white; border-radius:12px; border:1px solid var(--border); box-shadow:var(--sh); padding:1.5rem; margin:0 3rem 1rem; }
-.proc-title { font-family:'Cairo',sans-serif; font-size:14px; font-weight:700; color:var(--text); margin:0 0 1rem; }
-.proc-row { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--cream); }
-.proc-row:last-child { border:none; }
-.proc-lbl { flex:1; font-size:13px; color:var(--text); }
-.proc-ok  { color:var(--green); font-weight:700; font-size:14px; }
-
-/* فوتر */
-.g-footer { background:var(--navy); padding:1rem 3rem; display:flex; align-items:center; justify-content:space-between; margin-top:3rem; }
-.g-footer span { color:rgba(255,255,255,0.3); font-size:12px; }
-.g-footer strong { color:rgba(255,255,255,0.6); font-family:'Cairo',sans-serif; font-size:13px; }
-
-/* أرقام انجليزية */
-input, [data-testid="stMetricValue"],
-[data-testid="stSliderTickBarMin"],
-[data-testid="stSliderTickBarMax"] {
-  font-family: 'IBM Plex Mono', monospace !important;
-}
-label { font-family: 'Cairo', sans-serif !important; }
-hr { border-color: var(--border) !important; }
+hr { border-color: #CBD5E1 !important; }
 </style>
 """, unsafe_allow_html=True)
 
